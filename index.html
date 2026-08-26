@@ -126,8 +126,8 @@
   <button class="modal__close" data-action="close-modal">✕</button>
   <div class="modal__title">LOGIN</div>
   <form id="form-login">
-    <input class="field" type="text" placeholder="아이디" required>
-    <input class="field" type="password" placeholder="비밀번호" required>
+    <input class="field" type="text" placeholder="아이디" id="login-id" required>
+    <input class="field" type="password" placeholder="비밀번호" id="login-pw" required>
     <label class="checkbox-row"><input type="checkbox"> 자동로그인</label>
     <button type="submit" class="submit-btn">로그인</button>
   </form>
@@ -142,16 +142,16 @@
   <button class="modal__close" data-action="close-modal">✕</button>
   <div class="modal__title">JOIN</div>
   <form id="form-join">
-    <input class="field" type="text" placeholder="이름" required>
+    <input class="field" type="text" placeholder="이름" id="join-name" required>
 
     <div class="field-row">
-      <input class="field" type="tel" placeholder="휴대폰 번호">
+      <input class="field" type="tel" placeholder="휴대폰 번호" id="join-phone">
       <button type="button" class="field-btn" data-action="send-auth">인증번호 발송</button>
     </div>
     <div class="field-hint" id="auth-timer">-</div>
 
     <div class="field-row">
-      <input class="field" type="text" placeholder="이메일 아이디">
+      <input class="field" type="text" placeholder="이메일 아이디" id="email-id">
       <span style="align-self:center;color:#888;">@</span>
       <select class="field select-field" id="email-domain" style="margin-bottom:0;">
         <option value="">직접입력</option>
@@ -167,17 +167,17 @@
     </div>
     <div class="field-hint" id="id-hint">영문/숫자 조합 8~13자로 입력해 주세요.</div>
 
-    <input class="field" type="password" placeholder="비밀번호">
-    <input class="field" type="password" placeholder="비밀번호 확인">
+    <input class="field" type="password" placeholder="비밀번호" id="join-pw">
+    <input class="field" type="password" placeholder="비밀번호 확인" id="join-pw-confirm">
 
     <div class="field-row">
-      <input class="field" type="text" placeholder="주소 검색" readonly>
+      <input class="field" type="text" placeholder="주소 검색" id="join-address">
       <button type="button" class="field-btn" data-action="find-address">도로명주소 찾기</button>
     </div>
-    <input class="field" type="text" placeholder="상세주소">
+    <input class="field" type="text" placeholder="상세주소" id="join-address-detail">
 
     <label class="checkbox-row"><input type="checkbox" required> (필수) 개인정보 수집 및 이용 동의</label>
-    <label class="checkbox-row"><input type="checkbox"> (선택) 마케팅 정보 수신 동의</label>
+    <label class="checkbox-row"><input type="checkbox" id="join-marketing"> (선택) 마케팅 정보 수신 동의</label>
 
     <button type="submit" class="submit-btn">회원가입</button>
   </form>
@@ -217,6 +217,8 @@
 <!-- ============ CS MODAL ============ -->
 <div class="modal modal--large" id="modal-cs" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabaseClient.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

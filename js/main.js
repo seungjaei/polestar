@@ -102,12 +102,6 @@ const FAQ_DATA = [
   { cat: '배송', q: '배송비는 얼마인가요?', a: '전 상품 기본 배송비는 3,000원이며, 도서/산간 지역은 추가 배송비가 발생할 수 있습니다.' }
 ];
 
-const ORDERS = [
-  { no: '20260812-0091', date: '2026-08-12', product: 'BLAZED HIPHOP LAZY CLOTH 01', option: 'BLACK / L', amount: 203000, pay: '신용카드', status: '배송완료' },
-  { no: '20260803-0054', date: '2026-08-03', product: 'I4P FUTURE SCIENCE CLOTH 02', option: 'WHITE / M', amount: 93000, pay: '계좌이체', status: '배송중' },
-  { no: '20260721-0032', date: '2026-07-21', product: 'IAB BASIC CLOTH 01', option: 'GRAY / S', amount: 123000, pay: '신용카드', status: '배송준비중' }
-];
-
 /* ---------------------------------------------------------
    1. UTILITIES
 --------------------------------------------------------- */
@@ -457,12 +451,12 @@ function updateTotal(form, unitPrice) {
   $('[data-role="total"]', form).textContent = won(unitPrice * qty);
 }
 
-function tryAddToCart(form, product, brand, isBuyNow) {
+async function tryAddToCart(form, product, brand, isBuyNow) {
   const color = $('[data-role="color"]', form).value;
   const size = $('[data-role="size"]', form).value;
   const qty = Number($('[data-role="qty"]', form).textContent);
   if (!color || !size) { showToast('옵션을 선택해 주세요'); return; }
-  addToCart({
+  await addToCart({
     productId: product.id,
     name: product.name,
     price: product.price,
@@ -474,34 +468,96 @@ function tryAddToCart(form, product, brand, isBuyNow) {
 }
 
 /* ---------------------------------------------------------
-   7. CART
+   7. CART (Supabase cart_items when logged in, localStorage for guests)
 --------------------------------------------------------- */
-function loadCart() { try { return JSON.parse(localStorage.getItem('polestar_cart') || '[]'); } catch { return []; } }
-function saveCart(cart) { localStorage.setItem('polestar_cart', JSON.stringify(cart)); }
+let cartCache = [];
 
-function addToCart(item) {
-  const cart = loadCart();
-  const existing = cart.find(c => c.productId === item.productId && c.color === item.color && c.size === item.size);
-  if (existing) existing.qty += item.qty;
-  else cart.push(item);
-  saveCart(cart);
-  renderCartUI();
-}
-function removeFromCart(idx) {
-  const cart = loadCart();
-  cart.splice(idx, 1);
-  saveCart(cart);
-  renderCartUI();
-}
-function changeCartQty(idx, delta) {
-  const cart = loadCart();
-  cart[idx].qty = Math.max(1, cart[idx].qty + delta);
-  saveCart(cart);
-  renderCartUI();
+function loadGuestCart() { try { return JSON.parse(localStorage.getItem('polestar_cart') || '[]'); } catch { return []; } }
+function saveGuestCart(cart) { localStorage.setItem('polestar_cart', JSON.stringify(cart)); }
+
+async function loadCart() {
+  if (currentUser) {
+    const { data, error } = await sb.from('cart_items')
+      .select('id,product_id,color,size,qty')
+      .eq('user_id', currentUser.id)
+      .order('created_at');
+    if (error) { console.error(error); return []; }
+    return data.map(row => {
+      const found = findProduct(row.product_id);
+      if (!found) return null;
+      return {
+        id: row.id,
+        productId: row.product_id,
+        name: found.product.name,
+        price: found.product.price,
+        img: `images/${found.brand.key}/${found.product.model}.${found.product.ext}`,
+        color: row.color, size: row.size, qty: row.qty
+      };
+    }).filter(Boolean);
+  }
+  return loadGuestCart();
 }
 
-function renderCartUI() {
-  const cart = loadCart();
+async function mergeGuestCartIntoDb() {
+  const guestCart = loadGuestCart();
+  if (!guestCart.length || !currentUser) return;
+  for (const item of guestCart) {
+    const { data: existing } = await sb.from('cart_items')
+      .select('id,qty')
+      .eq('user_id', currentUser.id).eq('product_id', item.productId)
+      .eq('color', item.color).eq('size', item.size).maybeSingle();
+    if (existing) await sb.from('cart_items').update({ qty: existing.qty + item.qty }).eq('id', existing.id);
+    else await sb.from('cart_items').insert({ user_id: currentUser.id, product_id: item.productId, color: item.color, size: item.size, qty: item.qty });
+  }
+  saveGuestCart([]);
+}
+
+async function addToCart(item) {
+  if (currentUser) {
+    const { data: existing } = await sb.from('cart_items')
+      .select('id,qty')
+      .eq('user_id', currentUser.id).eq('product_id', item.productId)
+      .eq('color', item.color).eq('size', item.size).maybeSingle();
+    if (existing) await sb.from('cart_items').update({ qty: existing.qty + item.qty }).eq('id', existing.id);
+    else await sb.from('cart_items').insert({ user_id: currentUser.id, product_id: item.productId, color: item.color, size: item.size, qty: item.qty });
+  } else {
+    const cart = loadGuestCart();
+    const existing = cart.find(c => c.productId === item.productId && c.color === item.color && c.size === item.size);
+    if (existing) existing.qty += item.qty;
+    else cart.push(item);
+    saveGuestCart(cart);
+  }
+  await renderCartUI();
+}
+async function removeFromCart(idx) {
+  const item = cartCache[idx];
+  if (!item) return;
+  if (currentUser) {
+    await sb.from('cart_items').delete().eq('id', item.id);
+  } else {
+    const cart = loadGuestCart();
+    cart.splice(idx, 1);
+    saveGuestCart(cart);
+  }
+  await renderCartUI();
+}
+async function changeCartQty(idx, delta) {
+  const item = cartCache[idx];
+  if (!item) return;
+  const nextQty = Math.max(1, item.qty + delta);
+  if (currentUser) {
+    await sb.from('cart_items').update({ qty: nextQty }).eq('id', item.id);
+  } else {
+    const cart = loadGuestCart();
+    cart[idx].qty = nextQty;
+    saveGuestCart(cart);
+  }
+  await renderCartUI();
+}
+
+async function renderCartUI() {
+  const cart = await loadCart();
+  cartCache = cart;
   const count = cart.reduce((s, c) => s + c.qty, 0);
   $('#cart-count').textContent = String(count);
 
@@ -547,11 +603,82 @@ function closeCart() {
   if (!isAnyModalOpen()) $('#modal-backdrop').hidden = true;
 }
 
+async function doCheckout() {
+  if (!currentUser) {
+    closeCart();
+    openModal('modal-login');
+    showToast('주문하려면 로그인이 필요합니다');
+    return;
+  }
+  const cart = await loadCart();
+  if (!cart.length) return;
+
+  const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+  const shipping = 3000;
+  const orderNo = `${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+  const { data: order, error } = await sb.from('orders').insert({
+    order_no: orderNo,
+    user_id: currentUser.id,
+    subtotal, shipping,
+    total: subtotal + shipping,
+    pay_method: '신용카드',
+    status: '결제완료'
+  }).select().single();
+
+  if (error) { console.error(error); showToast('주문 처리 중 오류가 발생했습니다'); return; }
+
+  const itemsPayload = cart.map(c => ({
+    order_id: order.id, product_id: c.productId, product_name: c.name,
+    color: c.color, size: c.size, qty: c.qty, price: c.price
+  }));
+  const { error: itemsError } = await sb.from('order_items').insert(itemsPayload);
+  if (itemsError) console.error(itemsError);
+
+  await sb.from('cart_items').delete().eq('user_id', currentUser.id);
+  await renderCartUI();
+  closeCart();
+  showToast('주문이 완료되었습니다');
+}
+
 /* ---------------------------------------------------------
-   8. AUTH MODALS (LOGIN / JOIN / FIND)
+   8. AUTH (Supabase Auth + profiles)
 --------------------------------------------------------- */
-function isLoggedIn() { return localStorage.getItem('polestar_auth') === '1'; }
-function setLoggedIn(v) { localStorage.setItem('polestar_auth', v ? '1' : '0'); updateAuthUI(); }
+let currentUser = null;
+let currentProfile = null;
+
+function isLoggedIn() { return !!currentUser; }
+
+async function refreshAuthState() {
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session?.user || null;
+  if (currentUser) {
+    await mergeGuestCartIntoDb();
+    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+    if (error) console.error(error);
+    currentProfile = data || null;
+  } else {
+    currentProfile = null;
+  }
+  updateAuthUI();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  updateAuthUI();
+  await renderCartUI();
+  showToast('로그아웃 되었습니다');
+}
+
+async function checkUsernameAvailability() {
+  const val = $('#join-id').value.trim();
+  if (val.length < 8 || val.length > 13) { showToast('아이디는 8~13자로 입력해 주세요'); return; }
+  const { data: exists, error } = await sb.rpc('username_exists', { p_username: val });
+  if (error) { console.error(error); showToast('중복확인 중 오류가 발생했습니다'); return; }
+  showToast(exists ? '이미 사용 중인 아이디입니다' : '사용 가능한 아이디입니다');
+}
 
 function updateAuthUI() {
   const loggedIn = isLoggedIn();
@@ -590,28 +717,42 @@ function startAuthTimer() {
 /* ---------------------------------------------------------
    9. MYPAGE
 --------------------------------------------------------- */
-function renderMypage() {
+async function renderMypage() {
   const modal = $('#modal-mypage');
+  modal.innerHTML = `
+    <button class="modal__close" data-action="close-modal">✕</button>
+    <div class="mypage__loading" style="padding:60px 0;text-align:center;color:#888;">불러오는 중...</div>
+  `;
+
+  const { data: orders, error } = await sb.from('orders')
+    .select('order_no,total,pay_method,status,created_at,order_items(product_name,color,size,qty,price)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) console.error(error);
+
+  const rows = (orders || []).flatMap(o => (o.order_items || []).map(it => `
+    <tr>
+      <td>${o.order_no}</td><td>${o.created_at.slice(0, 10)}</td><td>${it.product_name}</td><td>${it.color} / ${it.size}</td>
+      <td>${won(o.total)}</td><td>${o.pay_method}</td>
+      <td><span class="status-badge ${o.status === '배송완료' ? 'status-badge--done' : ''}">${o.status}</span></td>
+    </tr>
+  `)).join('');
+
+  const p = currentProfile;
   modal.innerHTML = `
     <button class="modal__close" data-action="close-modal">✕</button>
     <div class="mypage__profile">
       <div>
-        <div class="mypage__name">이승재</div>
-        <div class="mypage__email">seungjaei549@gmail.com</div>
+        <div class="mypage__name">${p?.name || p?.username || ''}</div>
+        <div class="mypage__email">${p?.email || currentUser.email}</div>
       </div>
-      <div class="mileage-badge">MILEAGE: 45,000 M</div>
+      <div class="mileage-badge">MILEAGE: ${(p?.mileage || 0).toLocaleString('ko-KR')} M</div>
     </div>
     <div class="footer__col-title" style="margin-bottom:12px;">ORDER HISTORY</div>
     <table class="data-table">
       <thead><tr><th>주문번호</th><th>주문일</th><th>상품명</th><th>옵션</th><th>결제금액</th><th>결제수단</th><th>배송상태</th></tr></thead>
       <tbody>
-        ${ORDERS.map(o => `
-          <tr>
-            <td>${o.no}</td><td>${o.date}</td><td>${o.product}</td><td>${o.option}</td>
-            <td>${won(o.amount)}</td><td>${o.pay}</td>
-            <td><span class="status-badge ${o.status === '배송완료' ? 'status-badge--done' : ''}">${o.status}</span></td>
-          </tr>
-        `).join('')}
+        ${rows || `<tr><td colspan="7" style="text-align:center;padding:24px;">주문 내역이 없습니다.</td></tr>`}
       </tbody>
     </table>
     <div style="display:flex; gap:16px; justify-content:flex-end;">
@@ -765,7 +906,7 @@ function initEvents() {
       case 'nav-product': e.preventDefault(); navigate('#/product/' + target.dataset.product); break;
 
       case 'open-login': openModal('modal-login'); break;
-      case 'logout': setLoggedIn(false); showToast('로그아웃 되었습니다'); break;
+      case 'logout': doLogout(); break;
       case 'open-join': openModal('modal-join'); break;
       case 'open-findid': openModal('modal-find'); switchFindTab('id'); break;
       case 'open-findpw': openModal('modal-find'); switchFindTab('pw'); break;
@@ -784,21 +925,14 @@ function initEvents() {
       case 'toggle-mute': toggleMute(target.dataset.brand, target); break;
 
       case 'send-auth': startAuthTimer(); break;
-      case 'check-id': {
-        const val = $('#join-id').value;
-        if (val.length < 8 || val.length > 13) showToast('아이디는 8~13자로 입력해 주세요');
-        else showToast('사용 가능한 아이디입니다');
-        break;
-      }
-      case 'find-address': showToast('우편번호 검색 창을 엽니다 (데모)'); break;
+      case 'check-id': checkUsernameAvailability(); break;
+      case 'find-address': showToast('상세주소까지 직접 입력해 주세요'); break;
       case 'submit-inquiry': showToast('문의가 등록되었습니다'); break;
 
       case 'cart-qty-minus': changeCartQty(Number(target.dataset.idx), -1); break;
       case 'cart-qty-plus': changeCartQty(Number(target.dataset.idx), 1); break;
       case 'cart-remove': removeFromCart(Number(target.dataset.idx)); break;
-      case 'checkout':
-        if (loadCart().length) { saveCart([]); renderCartUI(); closeCart(); showToast('주문이 완료되었습니다'); }
-        break;
+      case 'checkout': doCheckout(); break;
 
       case 'toggle-accordion': {
         const item = target.closest('.accordion-item');
@@ -820,17 +954,77 @@ function initEvents() {
 
   $('#header-logo').addEventListener('click', () => navigate('#/'));
 
-  $('#form-login').addEventListener('submit', e => {
+  $('#form-login').addEventListener('submit', async e => {
     e.preventDefault();
-    setLoggedIn(true);
+    const idOrEmail = $('#login-id').value.trim();
+    const pw = $('#login-pw').value;
+    if (!idOrEmail || !pw) return;
+
+    let email = idOrEmail;
+    if (!idOrEmail.includes('@')) {
+      const { data: resolvedEmail, error: lookupError } = await sb.rpc('get_email_by_username', { p_username: idOrEmail });
+      if (lookupError || !resolvedEmail) { showToast('아이디 또는 비밀번호가 올바르지 않습니다'); return; }
+      email = resolvedEmail;
+    }
+
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      showToast(error.message.includes('Email not confirmed')
+        ? '이메일 인증 후 로그인해 주세요'
+        : '아이디 또는 비밀번호가 올바르지 않습니다');
+      return;
+    }
+
+    await refreshAuthState();
+    await renderCartUI();
     closeAllModals();
     showToast('로그인 되었습니다');
   });
-  $('#form-join').addEventListener('submit', e => {
+
+  $('#form-join').addEventListener('submit', async e => {
     e.preventDefault();
+    const name = $('#join-name').value.trim();
+    const phone = $('#join-phone').value.trim();
+    const emailId = $('#email-id').value.trim();
+    const domain = $('#email-domain').value.trim();
+    const username = $('#join-id').value.trim();
+    const pw = $('#join-pw').value;
+    const pwConfirm = $('#join-pw-confirm').value;
+    const address = $('#join-address').value.trim();
+    const addressDetail = $('#join-address-detail').value.trim();
+    const marketingAgree = $('#join-marketing').checked;
+
+    if (!name) { showToast('이름을 입력해 주세요'); return; }
+    if (!emailId || !domain) { showToast('이메일을 입력해 주세요'); return; }
+    if (username.length < 8 || username.length > 13) { showToast('아이디는 8~13자로 입력해 주세요'); return; }
+    if (pw.length < 6) { showToast('비밀번호는 6자 이상 입력해 주세요'); return; }
+    if (pw !== pwConfirm) { showToast('비밀번호가 일치하지 않습니다'); return; }
+
+    const { data: dup, error: dupError } = await sb.rpc('username_exists', { p_username: username });
+    if (dupError) { showToast('회원가입 중 오류가 발생했습니다'); return; }
+    if (dup) { showToast('이미 사용 중인 아이디입니다'); return; }
+
+    const email = `${emailId}@${domain}`;
+    const { data, error } = await sb.auth.signUp({
+      email, password: pw,
+      options: { data: { username, name, phone, address, address_detail: addressDetail, marketing_agree: marketingAgree } }
+    });
+
+    if (error) {
+      showToast(error.message.includes('already') ? '이미 가입된 이메일입니다' : '회원가입 중 오류가 발생했습니다');
+      console.error(error);
+      return;
+    }
+
     closeAllModals();
-    showToast('회원가입이 완료되었습니다. 로그인해 주세요');
-    openModal('modal-login');
+    if (data.session) {
+      await refreshAuthState();
+      await renderCartUI();
+      showToast('회원가입이 완료되었습니다');
+    } else {
+      showToast('가입 확인 메일을 발송했습니다. 이메일 인증 후 로그인해 주세요');
+      openModal('modal-login');
+    }
   });
 }
 
@@ -844,14 +1038,14 @@ function switchFindTab(which) {
 /* ---------------------------------------------------------
    14. INIT
 --------------------------------------------------------- */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initPopups();
   initWheel();
   initShowcase();
   initFloatingTop();
   initEvents();
-  renderCartUI();
-  updateAuthUI();
+  await refreshAuthState();
+  await renderCartUI();
   navigate(location.hash || '#/', true);
 });
 
