@@ -91,7 +91,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   justify-self: center;
   cursor: pointer;
 }
-.header__logo img { height: 34px; }
+.header__logo img { height: 68px; }
 
 .header__session {
   justify-self: end;
@@ -268,6 +268,16 @@ body.is-subpage .header__breadcrumb {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  clip-path: circle(50% at 50% 50%);
+}
+
+.wheel-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .wheel {
@@ -284,6 +294,10 @@ body.is-subpage .header__breadcrumb {
 @keyframes counterRotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(-360deg); }
+}
+@keyframes counterRotateCenter {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.65; text-shadow: 0 0 4px rgba(230,57,70,0.4); }
@@ -327,11 +341,10 @@ body.is-subpage .header__breadcrumb {
 .wheel__center {
   position: absolute;
   top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 3;
   text-align: center;
   pointer-events: none;
-  animation: counterRotate 40s linear infinite;
+  animation: counterRotateCenter 40s linear infinite;
 }
 .wheel__badge { width: 80px; height: 80px; object-fit: cover; margin: 0 auto; }
 .wheel__cta {
@@ -787,7 +800,9 @@ body.is-subpage .header__breadcrumb {
   z-index: var(--z-modal);
   max-height: 88vh;
   overflow-y: auto;
+  scrollbar-width: none;
 }
+.modal::-webkit-scrollbar { display: none; }
 .modal--auth { width: 420px; padding: 48px 40px; }
 .modal--large { width: 680px; padding: 48px; }
 
