@@ -62,12 +62,15 @@ ul { list-style: none; margin: 0; padding: 0; }
   height: 80px;
   width: 100%;
   z-index: var(--z-header);
-  backdrop-filter: blur(12px);
-  background: rgba(10, 10, 10, 0.85);
+  background: var(--bg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   padding: 0 40px;
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+#site-header.header--hidden {
+  transform: translateY(-100%);
 }
 
 .header__inner {
@@ -132,11 +135,13 @@ body.is-subpage .header__breadcrumb {
   z-index: var(--z-float);
   max-width: calc(100vw - 80px);
   overflow-x: auto;
+  scrollbar-width: none;
   display: flex;
   flex-direction: row;
   gap: 16px;
   padding-bottom: 4px;
 }
+#promo-popups::-webkit-scrollbar { display: none; }
 
 .promo-card {
   width: 280px;
@@ -337,6 +342,12 @@ body.is-subpage .header__breadcrumb {
   filter: brightness(0) invert(1);
   opacity: 0.9;
 }
+/* blazed logo renders visually smaller than the other 3 brand marks — 2x width/max-width
+   (not transform:scale, which the counterRotate animation would override every frame) */
+.wheel__wedge[data-brand="blazed"] .wheel__logo {
+  width: 124%;
+  max-width: 180px;
+}
 
 .wheel__center {
   position: absolute;
@@ -532,13 +543,19 @@ body.is-subpage .header__breadcrumb {
   justify-content: center;
   gap: 32px;
 }
+.collabo-header img.brand-logo,
+.collabo-header img.polestar-logo {
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.85)) drop-shadow(0 0 14px rgba(255,255,255,0.45));
+}
 .collabo-header img.brand-logo { height: 48px; width: auto; object-fit: contain; }
 .collabo-header img.polestar-logo { height: 38px; width: auto; }
 .collabo-header__x {
   font-family: var(--font-serif);
   font-size: 24px;
   font-weight: 400;
+  line-height: 1;
   color: var(--accent);
+  text-shadow: 0 0 6px rgba(255,255,255,0.85), 0 0 14px rgba(255,255,255,0.45);
 }
 
 .polaroid-grid {
