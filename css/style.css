@@ -300,10 +300,6 @@ body.is-subpage .header__breadcrumb {
   from { transform: rotate(0deg); }
   to { transform: rotate(-360deg); }
 }
-@keyframes counterRotateCenter {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(-360deg); }
-}
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.65; text-shadow: 0 0 4px rgba(230,57,70,0.4); }
   50% { opacity: 1; text-shadow: 0 0 14px rgba(230,57,70,0.9); }
@@ -355,7 +351,10 @@ body.is-subpage .header__breadcrumb {
   z-index: 3;
   text-align: center;
   pointer-events: none;
-  animation: counterRotateCenter 40s linear infinite;
+  /* Not a child of .wheel (it's a sibling) — it was never subject to
+     .wheel's rotation in the first place, so it needs no counter-rotation,
+     just its own static centering transform. */
+  transform: translate(-50%, -50%);
 }
 .wheel__badge { width: 80px; height: 80px; object-fit: cover; margin: 0 auto; }
 .wheel__cta {
@@ -372,6 +371,14 @@ body.is-subpage .header__breadcrumb {
 /* ============================================================
    BRAND SHOWCASE — FULLSCREEN SLIDES
    ============================================================ */
+#brand-showcase-root {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+#brand-showcase-root::-webkit-scrollbar { display: none; }
+
 .showcase {
   height: 100vh;
   width: 100%;
@@ -379,6 +386,8 @@ body.is-subpage .header__breadcrumb {
   overflow: hidden;
   background: var(--bg);
   z-index: 1;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .showcase__visual {
@@ -439,8 +448,10 @@ body.is-subpage .header__breadcrumb {
   font-size: 14px;
   font-weight: 400;
   color: #F0F0F0;
-  line-height: 1.7;
+  line-height: 1.8;
   letter-spacing: -0.01em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .showcase__badge {
@@ -493,7 +504,11 @@ body.is-subpage .header__breadcrumb {
   min-width: 150px;
   aspect-ratio: 9 / 16;
   align-self: center;
-  border: 1px solid rgba(255,255,255,0.2);
+  /* iPhone-style device frame — kept flat (no border-radius) per the
+     site's "no rounding" flat-UI rule; bezel + notch/home-bar read as
+     a phone without breaking that rule. */
+  border: 10px solid #050505;
+  outline: 1px solid rgba(255,255,255,0.18);
   background: #000000;
   position: relative;
   overflow: hidden;
@@ -503,6 +518,24 @@ body.is-subpage .header__breadcrumb {
   height: 100%;
   object-fit: cover;
   object-position: center;
+}
+.phone-notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 36%;
+  height: 5%;
+  background: #050505;
+  z-index: 3;
+}
+.phone-home-bar {
+  position: absolute;
+  bottom: 6px; left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 3px;
+  background: rgba(255,255,255,0.65);
+  z-index: 3;
 }
 .showcase__mute {
   position: absolute;
@@ -822,6 +855,26 @@ body.is-subpage .header__breadcrumb {
 .modal::-webkit-scrollbar { display: none; }
 .modal--auth { width: 420px; padding: 48px 40px; }
 .modal--large { width: 680px; padding: 48px; }
+.modal--video { width: min(78vw, 340px); background: transparent; border: none; padding: 0; }
+.modal--video .modal__close {
+  top: 10px; right: 10px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.3);
+  width: 30px; height: 30px;
+  font-size: 16px;
+  z-index: 4;
+}
+.phone-frame-lg {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border: 12px solid #050505;
+  outline: 1px solid rgba(255,255,255,0.18);
+  background: #000;
+  overflow: hidden;
+}
+.phone-frame-lg video { width: 100%; height: 100%; object-fit: cover; }
+.phone-frame-lg .phone-notch { height: 4%; }
 
 .modal__close {
   position: absolute;
@@ -1270,10 +1323,27 @@ body.is-subpage .header__breadcrumb {
 @media (max-width: 900px) {
   .polaroid-grid { grid-template-columns: repeat(2, 1fr); padding: 0 40px 100px 40px; }
   .buy-zone { grid-template-columns: 1fr; padding: 0 40px 60px 40px; }
-  .showcase__content { left: 8vw; right: 4vw; }
   .showcase__visual, .showcase__dim { width: 100%; opacity: 0.25; }
   .footer__middle { grid-template-columns: 1fr; gap: 32px; }
   .breadcrumb, .detail-nav-wrap, .polaroid-grid { padding-left: 40px; padding-right: 40px; }
+
+  /* PPT/artist card: desktop's side-by-side row layout doesn't fit a
+     phone screen — stack into one scrollable column sized to 100vh. */
+  .showcase__content {
+    left: 6vw; right: 6vw; top: 4vh; height: 92vh;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .showcase__content::-webkit-scrollbar { display: none; }
+  .showcase__story-col { height: auto; flex: none; gap: 2vh; }
+  .showcase__story { height: auto; max-height: 32vh; padding: 24px 20px; }
+  .showcase__badge { height: auto; padding: 20px; }
+  .showcase__title { font-size: 22px; }
+  .showcase__director { font-size: 18px; }
+  .showcase__phone { width: 40vw; min-width: 130px; align-self: center; }
 }
 @media (max-width: 900px) {
   .checkout-grid { grid-template-columns: 1fr; }

@@ -148,8 +148,10 @@ function initShowcase() {
               <button class="showcase__btn" data-action="nav-brand" data-brand="${key}">VIEW LOOKBOOK ➔</button>
             </div>
           </div>
-          <div class="showcase__phone">
+          <div class="showcase__phone" data-action="open-video-modal" data-brand="${key}">
+            <div class="phone-notch"></div>
             <video muted playsinline data-brand="${key}"></video>
+            <div class="phone-home-bar"></div>
             <button class="showcase__mute" data-action="toggle-mute" data-brand="${key}">UNMUTE</button>
           </div>
         </div>
@@ -186,6 +188,23 @@ function toggleMute(brandKey, btn) {
   if (!video) return;
   video.muted = !video.muted;
   btn.textContent = video.muted ? 'UNMUTE' : 'MUTE';
+}
+
+/* Mobile-only: tapping the artist card's phone frame opens an enlarged
+   video modal (iPhone-frame + muted autoplay) — desktop keeps the
+   always-visible inline showcase, no modal needed there. */
+function openVideoModal(brandKey) {
+  if (!window.matchMedia('(max-width: 900px)').matches) return;
+  const b = BRANDS[brandKey];
+  const sourceVideo = $(`#brand-showcase-root video[data-brand="${brandKey}"]`);
+  const modalVideo = $('#modal-video-el');
+  modalVideo.src = (sourceVideo && (sourceVideo.currentSrc || sourceVideo.src)) || b.screens[0];
+  modalVideo.muted = true;
+  Polestar.openModalEl('modal-video');
+  modalVideo.play().catch(() => {});
+}
+function closeVideoModal() {
+  $('#modal-video-el')?.pause();
 }
 
 /* ---------------------------------------------------------
@@ -404,7 +423,9 @@ function initHeaderScrollHide() {
   const showcaseRoot = $('#brand-showcase-root');
   if (!header || !showcaseRoot) return;
   window.addEventListener('scroll', () => {
-    const entered = showcaseRoot.getBoundingClientRect().top <= 0;
+    // small tolerance — natural scroll positions rarely land on an exact
+    // integer 0px boundary, so a strict `<= 0` check can miss by 1-2px
+    const entered = showcaseRoot.getBoundingClientRect().top <= 4;
     header.classList.toggle('header--hidden', entered);
   }, { passive: true });
 }
@@ -476,6 +497,8 @@ function initEvents() {
       case 'hide-today-popup': hideTodayPopup(target.dataset.popup); break;
 
       case 'toggle-mute': toggleMute(target.dataset.brand, target); break;
+      case 'open-video-modal': openVideoModal(target.dataset.brand); break;
+      case 'close-modal': closeVideoModal(); Polestar.closeAllModals(); break;
     }
 
     if (target.dataset.findTab) switchFindTab(target.dataset.findTab);
@@ -484,6 +507,8 @@ function initEvents() {
       target.classList.add('is-active');
     }
   });
+
+  $('#modal-backdrop').addEventListener('click', closeVideoModal);
 }
 
 function switchFindTab(which) {
