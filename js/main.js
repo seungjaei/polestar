@@ -1,6 +1,9 @@
 /* ============================================================
-   POLESTAR — main.js
-   SPA router + wheel/background sync + commerce mock (no backend)
+   POLESTAR — main.js (index.html only)
+   SPA router (home/lookbook/detail) + wheel/background sync +
+   product detail add-to-cart. Login modal, header state, and
+   cart data all come from js/common.js (window.Polestar), shared
+   with the standalone pages (signup/cart/checkout/mypage/support).
    ============================================================ */
 (() => {
 'use strict';
@@ -9,12 +12,14 @@
    0. SHARED DATA / UTILS (js/common.js — window.Polestar)
 --------------------------------------------------------- */
 const {
-  BRANDS, BRAND_ORDER, COLORS, SIZES, findProduct, FAQ_DATA,
+  BRANDS, BRAND_ORDER, COLORS, SIZES, findProduct,
   $, $all, won, showToast
 } = window.Polestar;
 
+let currentUser = null;
+
 /* ---------------------------------------------------------
-   2. PROMO POPUPS
+   1. PROMO POPUPS
 --------------------------------------------------------- */
 const POPUP_DATA = [
   { id: 'randombox', tag: 'LIMITED DROP', title: 'POLESTAR RANDOM BOX', desc: '4대 아티스트 브랜드 시그니처 아이템 랜덤 구성', price: '150,000 KRW' },
@@ -63,7 +68,7 @@ function hideTodayPopup(id) {
 }
 
 /* ---------------------------------------------------------
-   3. HERO WHEEL + BACKGROUND SYNC
+   2. HERO WHEEL + BACKGROUND SYNC
 --------------------------------------------------------- */
 const WHEEL_BASE_ANGLE = { 0: 315, 1: 45, 2: 135, 3: 225 };
 let wheelStart = null, wheelPausedAccum = 0, wheelPauseStart = null;
@@ -121,7 +126,7 @@ function syncWheelBackground() {
 }
 
 /* ---------------------------------------------------------
-   4. BRAND SHOWCASE (fullscreen slides)
+   3. BRAND SHOWCASE (fullscreen slides)
 --------------------------------------------------------- */
 function initShowcase() {
   const root = $('#brand-showcase-root');
@@ -184,7 +189,7 @@ function toggleMute(brandKey, btn) {
 }
 
 /* ---------------------------------------------------------
-   5. LOOKBOOK VIEW
+   4. LOOKBOOK VIEW
 --------------------------------------------------------- */
 function renderLookbook(brandKey) {
   const b = BRANDS[brandKey];
@@ -215,7 +220,7 @@ function renderLookbook(brandKey) {
 }
 
 /* ---------------------------------------------------------
-   6. PRODUCT DETAIL VIEW
+   5. PRODUCT DETAIL VIEW
 --------------------------------------------------------- */
 function reviewsFor(product) {
   return [
@@ -279,6 +284,7 @@ function renderDetail(productId) {
         <div class="btn-group">
           <button class="btn-cart" type="button" data-action="add-cart">장바구니 담기</button>
           <button class="btn-buy" type="button" data-action="buy-now">바로 구매하기</button>
+          <button class="btn-cart" type="button" data-action="toggle-wishlist">${Polestar.isWishlisted(p.id) ? '♥ 위시리스트 담김' : '♡ 위시리스트 담기'}</button>
         </div>
       </div>
     </div>
@@ -327,15 +333,22 @@ function renderDetail(productId) {
   `;
 
   currentUnitPrice = p.price;
+  Polestar.addRecentlyViewed(p.id);
 
   const form = $('.buy-form', view);
   form.addEventListener('click', e => {
-    const action = e.target.closest('[data-action]')?.dataset.action;
+    const target = e.target.closest('[data-action]');
+    const action = target?.dataset.action;
     if (!action) return;
     if (action === 'qty-minus') updateQty(form, -1);
     if (action === 'qty-plus') updateQty(form, 1);
     if (action === 'add-cart') tryAddToCart(form, p, b, false);
     if (action === 'buy-now') tryAddToCart(form, p, b, true);
+    if (action === 'toggle-wishlist') {
+      const nowIn = Polestar.toggleWishlist(p.id);
+      target.textContent = nowIn ? '♥ 위시리스트 담김' : '♡ 위시리스트 담기';
+      showToast(nowIn ? '위시리스트에 담았습니다' : '위시리스트에서 제거했습니다');
+    }
   });
   $all('select', form).forEach(sel => sel.addEventListener('change', () => updateTotal(form, p.price)));
 }
@@ -358,312 +371,25 @@ async function tryAddToCart(form, product, brand, isBuyNow) {
   const size = $('[data-role="size"]', form).value;
   const qty = Number($('[data-role="qty"]', form).textContent);
   if (!color || !size) { showToast('옵션을 선택해 주세요'); return; }
-  await addToCart({
+  await Polestar.addToCart({
     productId: product.id,
     name: product.name,
     price: product.price,
     img: `images/${brand.key}/${product.model}.${product.ext}`,
     color, size, qty
-  });
-  if (isBuyNow) { openCart(); showToast('바로 구매하기로 장바구니에 담았습니다'); }
-  else showToast('장바구니에 담았습니다');
-}
+  }, currentUser);
 
-/* ---------------------------------------------------------
-   7. CART (data layer lives in common.js — window.Polestar;
-   these are thin page-local wrappers that supply currentUser
-   and re-render the drawer after each mutation)
---------------------------------------------------------- */
-let cartCache = [];
-
-async function addToCart(item) {
-  await Polestar.addToCart(item, currentUser);
-  await renderCartUI();
-}
-async function removeFromCart(idx) {
-  await Polestar.removeCartItem(idx, cartCache[idx], currentUser);
-  await renderCartUI();
-}
-async function changeCartQty(idx, delta) {
-  await Polestar.changeCartQty(idx, cartCache[idx], delta, currentUser);
-  await renderCartUI();
-}
-
-async function renderCartUI() {
-  const cart = await Polestar.loadCart(currentUser);
-  cartCache = cart;
-  const count = cart.reduce((s, c) => s + c.qty, 0);
-  $('#cart-count').textContent = String(count);
-
-  const itemsEl = $('#cart-items');
-  if (cart.length === 0) {
-    itemsEl.innerHTML = `<div class="cart-empty">장바구니가 비어 있습니다.</div>`;
-  } else {
-    itemsEl.innerHTML = cart.map((c, i) => `
-      <div class="cart-item">
-        <img src="${c.img}" alt="${c.name}">
-        <div style="flex:1;">
-          <div class="cart-item__name">${c.name}</div>
-          <div class="cart-item__opt">${c.color} / ${c.size}</div>
-          <div class="cart-item__row">
-            <div class="cart-item__qty">
-              <button data-action="cart-qty-minus" data-idx="${i}">−</button>
-              <span>${c.qty}</span>
-              <button data-action="cart-qty-plus" data-idx="${i}">＋</button>
-            </div>
-            <button class="cart-item__remove" data-action="cart-remove" data-idx="${i}">삭제</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
-  const shipping = cart.length ? 3000 : 0;
-  $('#cart-summary').innerHTML = `
-    <div class="cart-summary__row"><span>상품 금액</span><span>${won(subtotal)}</span></div>
-    <div class="cart-summary__row"><span>배송비</span><span>${won(shipping)}</span></div>
-    <div class="cart-summary__row cart-summary__total"><span>총 결제 금액</span><span>${won(subtotal + shipping)}</span></div>
-    <button class="cart-checkout" data-action="checkout" ${cart.length ? '' : 'disabled'}>주문하기 / 결제하기</button>
-  `;
-}
-
-function openCart() {
-  $('#cart-drawer').classList.add('is-open');
-  $('#modal-backdrop').hidden = false;
-}
-function closeCart() {
-  $('#cart-drawer').classList.remove('is-open');
-  if (!isAnyModalOpen()) $('#modal-backdrop').hidden = true;
-}
-
-async function doCheckout() {
-  if (!currentUser) {
-    closeCart();
-    openModal('modal-login');
-    showToast('주문하려면 로그인이 필요합니다');
+  if (isBuyNow) {
+    location.href = 'cart.html';
     return;
   }
   const cart = await Polestar.loadCart(currentUser);
-  if (!cart.length) return;
-
-  const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
-  const shipping = 3000;
-  const orderNo = `${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-
-  const { data: order, error } = await sb.from('orders').insert({
-    order_no: orderNo,
-    user_id: currentUser.id,
-    subtotal, shipping,
-    total: subtotal + shipping,
-    pay_method: '신용카드',
-    status: '결제완료'
-  }).select().single();
-
-  if (error) { console.error(error); showToast('주문 처리 중 오류가 발생했습니다'); return; }
-
-  const itemsPayload = cart.map(c => ({
-    order_id: order.id, product_id: c.productId, product_name: c.name,
-    color: c.color, size: c.size, qty: c.qty, price: c.price
-  }));
-  const { error: itemsError } = await sb.from('order_items').insert(itemsPayload);
-  if (itemsError) console.error(itemsError);
-
-  await sb.from('cart_items').delete().eq('user_id', currentUser.id);
-  await renderCartUI();
-  closeCart();
-  showToast('주문이 완료되었습니다');
+  $('#cart-count').textContent = String(cart.reduce((s, c) => s + c.qty, 0));
+  showToast('장바구니에 담았습니다');
 }
 
 /* ---------------------------------------------------------
-   8. AUTH (Supabase Auth + profiles)
---------------------------------------------------------- */
-let currentUser = null;
-let currentProfile = null;
-
-function isLoggedIn() { return !!currentUser; }
-
-async function refreshAuthState() {
-  const { user, profile } = await Polestar.getSessionAndProfile();
-  currentUser = user;
-  currentProfile = profile;
-  if (currentUser) await Polestar.mergeGuestCartIntoDb(currentUser);
-  updateAuthUI();
-}
-
-async function doLogout() {
-  await Polestar.signOut();
-  currentUser = null;
-  currentProfile = null;
-  updateAuthUI();
-  await renderCartUI();
-  showToast('로그아웃 되었습니다');
-}
-
-async function checkUsernameAvailability() {
-  const val = $('#join-id').value.trim();
-  if (val.length < 8 || val.length > 13) { showToast('아이디는 8~13자로 입력해 주세요'); return; }
-  const { data: exists, error } = await Polestar.checkUsernameExists(val);
-  if (error) { console.error(error); showToast('중복확인 중 오류가 발생했습니다'); return; }
-  showToast(exists ? '이미 사용 중인 아이디입니다' : '사용 가능한 아이디입니다');
-}
-
-function updateAuthUI() {
-  const loggedIn = isLoggedIn();
-  $('#btn-login').textContent = loggedIn ? 'LOGOUT' : 'LOGIN';
-  $('#btn-join').style.display = loggedIn ? 'none' : '';
-  $('#btn-login').dataset.action = loggedIn ? 'logout' : 'open-login';
-}
-
-const MODAL_IDS = ['modal-login', 'modal-join', 'modal-find', 'modal-mypage', 'modal-cs'];
-function isAnyModalOpen() { return MODAL_IDS.some(id => !$('#' + id).hidden); }
-
-function openModal(id) {
-  MODAL_IDS.forEach(m => { $('#' + m).hidden = (m !== id); });
-  $('#modal-backdrop').hidden = false;
-}
-function closeAllModals() {
-  MODAL_IDS.forEach(m => { $('#' + m).hidden = true; });
-  if (!$('#cart-drawer').classList.contains('is-open')) $('#modal-backdrop').hidden = true;
-}
-
-let authTimerInterval = null;
-function startAuthTimer() {
-  clearInterval(authTimerInterval);
-  let remain = 180;
-  const el = $('#auth-timer');
-  el.textContent = `인증번호가 발송되었습니다. 남은 시간 03:00`;
-  authTimerInterval = setInterval(() => {
-    remain--;
-    const m = String(Math.floor(remain / 60)).padStart(2, '0');
-    const s = String(remain % 60).padStart(2, '0');
-    el.textContent = `인증번호가 발송되었습니다. 남은 시간 ${m}:${s}`;
-    if (remain <= 0) { clearInterval(authTimerInterval); el.textContent = '인증 시간이 만료되었습니다. 다시 시도해 주세요.'; }
-  }, 1000);
-}
-
-/* ---------------------------------------------------------
-   9. MYPAGE
---------------------------------------------------------- */
-async function renderMypage() {
-  const modal = $('#modal-mypage');
-  modal.innerHTML = `
-    <button class="modal__close" data-action="close-modal">✕</button>
-    <div class="mypage__loading" style="padding:60px 0;text-align:center;color:#888;">불러오는 중...</div>
-  `;
-
-  const { data: orders, error } = await sb.from('orders')
-    .select('order_no,total,pay_method,status,created_at,order_items(product_name,color,size,qty,price)')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false });
-  if (error) console.error(error);
-
-  const rows = (orders || []).flatMap(o => (o.order_items || []).map(it => `
-    <tr>
-      <td>${o.order_no}</td><td>${o.created_at.slice(0, 10)}</td><td>${it.product_name}</td><td>${it.color} / ${it.size}</td>
-      <td>${won(o.total)}</td><td>${o.pay_method}</td>
-      <td><span class="status-badge ${o.status === '배송완료' ? 'status-badge--done' : ''}">${o.status}</span></td>
-    </tr>
-  `)).join('');
-
-  const p = currentProfile;
-  modal.innerHTML = `
-    <button class="modal__close" data-action="close-modal">✕</button>
-    <div class="mypage__profile">
-      <div>
-        <div class="mypage__name">${p?.name || p?.username || ''}</div>
-        <div class="mypage__email">${p?.email || currentUser.email}</div>
-      </div>
-      <div class="mileage-badge">MILEAGE: ${(p?.mileage || 0).toLocaleString('ko-KR')} M</div>
-    </div>
-    <div class="footer__col-title" style="margin-bottom:12px;">ORDER HISTORY</div>
-    <table class="data-table">
-      <thead><tr><th>주문번호</th><th>주문일</th><th>상품명</th><th>옵션</th><th>결제금액</th><th>결제수단</th><th>배송상태</th></tr></thead>
-      <tbody>
-        ${rows || `<tr><td colspan="7" style="text-align:center;padding:24px;">주문 내역이 없습니다.</td></tr>`}
-      </tbody>
-    </table>
-    <div style="display:flex; gap:16px; justify-content:flex-end;">
-      <button class="text-btn" type="button">회원정보 수정</button>
-      <button class="text-btn" type="button">회원탈퇴</button>
-    </div>
-  `;
-}
-
-/* ---------------------------------------------------------
-   10. CS CENTER
---------------------------------------------------------- */
-let csTab = 'inquiry';
-let faqFilter = '전체';
-let faqQuery = '';
-
-function renderCS() {
-  const modal = $('#modal-cs');
-  modal.innerHTML = `
-    <button class="modal__close" data-action="close-modal">✕</button>
-    <div class="modal__title" style="text-align:left;">고객센터 / CS CENTER</div>
-    <div class="tab-bar">
-      <button class="tab-btn ${csTab === 'inquiry' ? 'is-active' : ''}" data-cs-tab="inquiry">1:1 문의하기</button>
-      <button class="tab-btn ${csTab === 'history' ? 'is-active' : ''}" data-cs-tab="history">문의내역 보기</button>
-      <button class="tab-btn ${csTab === 'faq' ? 'is-active' : ''}" data-cs-tab="faq">자주 묻는 질문</button>
-    </div>
-    <div id="cs-panel"></div>
-  `;
-  renderCSPanel();
-}
-
-function renderCSPanel() {
-  const panel = $('#cs-panel');
-  if (csTab === 'inquiry') {
-    panel.innerHTML = `
-      <select class="select-field">
-        <option>배송</option><option>취소/환불</option><option>상품 문의</option><option>기타</option>
-      </select>
-      <input class="field" type="text" placeholder="문의 제목">
-      <textarea class="field" style="height:120px; padding:12px 16px;" placeholder="문의 내용을 입력해 주세요"></textarea>
-      <input class="field" type="file">
-      <button class="submit-btn" type="button" data-action="submit-inquiry">문의 등록</button>
-    `;
-  } else if (csTab === 'history') {
-    const items = [
-      { title: '배송 지연 문의', status: 'answered', body: '주문하신 상품은 8/25 출고되어 8/27 도착 예정입니다.' },
-      { title: '사이즈 교환 문의', status: 'pending', body: '' }
-    ];
-    panel.innerHTML = items.map((it, i) => `
-      <div class="accordion-item" data-idx="${i}">
-        <div class="accordion-q" data-action="toggle-accordion">
-          <span>${it.title}</span>
-          <span class="inquiry-badge ${it.status === 'answered' ? 'answered' : ''}">${it.status === 'answered' ? '답변 완료' : '답변 대기'}</span>
-        </div>
-        <div class="accordion-a">${it.status === 'answered' ? '<b>관리자 답변:</b> ' + it.body : '아직 답변이 등록되지 않았습니다.'}</div>
-      </div>
-    `).join('');
-  } else {
-    const cats = ['전체', '주문/결제', '배송', '교환/반품', '회원/기타'];
-    const filtered = FAQ_DATA.filter(f =>
-      (faqFilter === '전체' || f.cat === faqFilter) &&
-      (f.q.includes(faqQuery) || f.a.includes(faqQuery))
-    );
-    panel.innerHTML = `
-      <input class="faq-search" type="text" placeholder="궁금한 점을 검색해 보세요" value="${faqQuery}" data-role="faq-search">
-      <div class="faq-filters">
-        ${cats.map(c => `<button class="faq-filter-btn ${faqFilter === c ? 'is-active' : ''}" data-faq-cat="${c}">${c}</button>`).join('')}
-      </div>
-      ${filtered.map((f, i) => `
-        <div class="accordion-item" data-idx="${i}">
-          <div class="accordion-q" data-action="toggle-accordion"><span>Q. ${f.q}</span><span>+</span></div>
-          <div class="accordion-a">A. ${f.a}</div>
-        </div>
-      `).join('') || '<div class="field-hint">검색 결과가 없습니다.</div>'}
-    `;
-    $('[data-role="faq-search"]', panel).addEventListener('input', e => {
-      faqQuery = e.target.value; renderCSPanel();
-    });
-  }
-}
-
-/* ---------------------------------------------------------
-   11. FLOATING TOP + SCROLL
+   6. FLOATING TOP + HEADER SCROLL HIDE
 --------------------------------------------------------- */
 function initFloatingTop() {
   const btn = $('#floating-top');
@@ -684,7 +410,7 @@ function initHeaderScrollHide() {
 }
 
 /* ---------------------------------------------------------
-   12. ROUTER
+   7. ROUTER (home / lookbook / detail)
 --------------------------------------------------------- */
 function parseHash(hash) {
   const h = (hash || '#/').replace(/^#/, '');
@@ -729,11 +455,11 @@ window.addEventListener('popstate', e => {
 });
 
 /* ---------------------------------------------------------
-   13. EVENT DELEGATION
+   8. EVENT DELEGATION (page-specific: nav / popups / find modal)
 --------------------------------------------------------- */
 function initEvents() {
   document.addEventListener('click', e => {
-    const target = e.target.closest('[data-action], [data-find-tab], [data-cs-tab], [data-faq-cat], .find-method');
+    const target = e.target.closest('[data-action], [data-find-tab], .find-method');
     if (!target) return;
     if (target.tagName === 'A') e.preventDefault();
     const action = target.dataset.action;
@@ -743,125 +469,19 @@ function initEvents() {
       case 'nav-brand': e.preventDefault(); navigate('#/brand/' + target.dataset.brand); break;
       case 'nav-product': e.preventDefault(); navigate('#/product/' + target.dataset.product); break;
 
-      case 'open-login': openModal('modal-login'); break;
-      case 'logout': doLogout(); break;
-      case 'open-join': openModal('modal-join'); break;
-      case 'open-findid': openModal('modal-find'); switchFindTab('id'); break;
-      case 'open-findpw': openModal('modal-find'); switchFindTab('pw'); break;
-      case 'open-mypage':
-        if (!isLoggedIn()) { openModal('modal-login'); showToast('로그인이 필요합니다'); break; }
-        renderMypage(); openModal('modal-mypage'); break;
-      case 'open-cs': renderCS(); openModal('modal-cs'); break;
-      case 'close-modal': closeAllModals(); break;
-
-      case 'open-cart': openCart(); break;
-      case 'close-cart': closeCart(); break;
+      case 'open-findid': Polestar.openModalEl('modal-find'); switchFindTab('id'); break;
+      case 'open-findpw': Polestar.openModalEl('modal-find'); switchFindTab('pw'); break;
 
       case 'close-popup': closePopup(target.dataset.popup); break;
       case 'hide-today-popup': hideTodayPopup(target.dataset.popup); break;
 
       case 'toggle-mute': toggleMute(target.dataset.brand, target); break;
-
-      case 'send-auth': startAuthTimer(); break;
-      case 'check-id': checkUsernameAvailability(); break;
-      case 'find-address': showToast('상세주소까지 직접 입력해 주세요'); break;
-      case 'submit-inquiry': showToast('문의가 등록되었습니다'); break;
-
-      case 'cart-qty-minus': changeCartQty(Number(target.dataset.idx), -1); break;
-      case 'cart-qty-plus': changeCartQty(Number(target.dataset.idx), 1); break;
-      case 'cart-remove': removeFromCart(Number(target.dataset.idx)); break;
-      case 'checkout': doCheckout(); break;
-
-      case 'toggle-accordion': {
-        const item = target.closest('.accordion-item');
-        item.classList.toggle('is-open');
-        break;
-      }
     }
 
     if (target.dataset.findTab) switchFindTab(target.dataset.findTab);
-    if (target.dataset.csTab) { csTab = target.dataset.csTab; renderCS(); }
-    if (target.dataset.faqCat) { faqFilter = target.dataset.faqCat; renderCSPanel(); }
     if (target.classList.contains('find-method')) {
       target.parentElement.querySelectorAll('.find-method').forEach(b => b.classList.remove('is-active'));
       target.classList.add('is-active');
-    }
-  });
-
-  $('#modal-backdrop').addEventListener('click', () => { closeAllModals(); closeCart(); });
-
-  $('#header-logo').addEventListener('click', () => navigate('#/'));
-
-  $('#form-login').addEventListener('submit', async e => {
-    e.preventDefault();
-    const idOrEmail = $('#login-id').value.trim();
-    const pw = $('#login-pw').value;
-    if (!idOrEmail || !pw) return;
-
-    let email = idOrEmail;
-    if (!idOrEmail.includes('@')) {
-      const { data: resolvedEmail, error: lookupError } = await sb.rpc('get_email_by_username', { p_username: idOrEmail });
-      if (lookupError || !resolvedEmail) { showToast('아이디 또는 비밀번호가 올바르지 않습니다'); return; }
-      email = resolvedEmail;
-    }
-
-    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (error) {
-      showToast(error.message.includes('Email not confirmed')
-        ? '이메일 인증 후 로그인해 주세요'
-        : '아이디 또는 비밀번호가 올바르지 않습니다');
-      return;
-    }
-
-    await refreshAuthState();
-    await renderCartUI();
-    closeAllModals();
-    showToast('로그인 되었습니다');
-  });
-
-  $('#form-join').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = $('#join-name').value.trim();
-    const phone = $('#join-phone').value.trim();
-    const emailId = $('#email-id').value.trim();
-    const domain = $('#email-domain').value.trim();
-    const username = $('#join-id').value.trim();
-    const pw = $('#join-pw').value;
-    const pwConfirm = $('#join-pw-confirm').value;
-    const address = $('#join-address').value.trim();
-    const addressDetail = $('#join-address-detail').value.trim();
-    const marketingAgree = $('#join-marketing').checked;
-
-    if (!name) { showToast('이름을 입력해 주세요'); return; }
-    if (!emailId || !domain) { showToast('이메일을 입력해 주세요'); return; }
-    if (username.length < 8 || username.length > 13) { showToast('아이디는 8~13자로 입력해 주세요'); return; }
-    if (pw.length < 6) { showToast('비밀번호는 6자 이상 입력해 주세요'); return; }
-    if (pw !== pwConfirm) { showToast('비밀번호가 일치하지 않습니다'); return; }
-
-    const { data: dup, error: dupError } = await Polestar.checkUsernameExists(username);
-    if (dupError) { showToast('회원가입 중 오류가 발생했습니다'); return; }
-    if (dup) { showToast('이미 사용 중인 아이디입니다'); return; }
-
-    const email = `${emailId}@${domain}`;
-    const { data, error } = await sb.auth.signUp({
-      email, password: pw,
-      options: { data: { username, name, phone, address, address_detail: addressDetail, marketing_agree: marketingAgree } }
-    });
-
-    if (error) {
-      showToast(error.message.includes('already') ? '이미 가입된 이메일입니다' : '회원가입 중 오류가 발생했습니다');
-      console.error(error);
-      return;
-    }
-
-    closeAllModals();
-    if (data.session) {
-      await refreshAuthState();
-      await renderCartUI();
-      showToast('회원가입이 완료되었습니다');
-    } else {
-      showToast('가입 확인 메일을 발송했습니다. 이메일 인증 후 로그인해 주세요');
-      openModal('modal-login');
     }
   });
 }
@@ -874,7 +494,7 @@ function switchFindTab(which) {
 }
 
 /* ---------------------------------------------------------
-   14. INIT
+   9. INIT
 --------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', async () => {
   initPopups();
@@ -883,8 +503,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initFloatingTop();
   initHeaderScrollHide();
   initEvents();
-  await refreshAuthState();
-  await renderCartUI();
+  Polestar.wireHeaderEvents({ onLogoClick: () => navigate('#/') });
+  currentUser = await Polestar.mountHeader();
   navigate(location.hash || '#/', true);
 });
 

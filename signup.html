@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POLESTAR — Korean Hip-Hop Artist Culture Showcase</title>
+<title>회원가입 — POLESTAR</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="is-subpage">
 
 <!-- ============ HEADER ============ -->
 <header id="site-header">
   <div class="header__inner">
-    <span class="header__breadcrumb" id="breadcrumb"></span>
+    <span class="header__breadcrumb" id="breadcrumb">HOME &gt; SIGN UP</span>
     <div class="header__logo" id="header-logo">
       <img src="images/logo/polestar1.jpg" alt="POLESTAR">
     </div>
@@ -24,42 +24,56 @@
   </div>
 </header>
 
-<!-- ============ PROMO POPUPS ============ -->
-<div id="promo-popups"></div>
+<!-- ============ PAGE ============ -->
+<main class="page-shell">
+  <div class="page-title">SIGN UP</div>
 
-<!-- ============ APP ROOT ============ -->
-<main id="app">
+  <form id="form-join">
+    <input class="field" type="text" placeholder="이름" id="join-name" required>
 
-  <!-- ---------- HOME VIEW ---------- -->
-  <section id="view-home" class="view">
+    <div class="field-row">
+      <input class="field" type="tel" placeholder="휴대폰 번호 ('-' 없이 또는 포함)" id="join-phone">
+      <button type="button" class="field-btn" id="btn-send-auth">인증번호 발송</button>
+    </div>
+    <div class="field-row">
+      <input class="field" type="text" placeholder="인증번호 4자리" id="join-auth-code" disabled>
+      <button type="button" class="field-btn" id="btn-verify-code" disabled>확인</button>
+    </div>
+    <div class="field-hint" id="auth-timer">휴대폰 번호 입력 후 인증번호 발송을 눌러 주세요. (데모: 실제 문자 발송 없음)</div>
 
-    <section id="hero">
-      <div class="hero-bg" id="hero-bg"></div>
+    <div class="field-row">
+      <input class="field" type="text" placeholder="이메일 아이디" id="email-id">
+      <span style="align-self:center;color:#888;">@</span>
+      <select class="field select-field" id="email-domain" style="margin-bottom:0;">
+        <option value="">직접입력</option>
+        <option value="naver.com">naver.com</option>
+        <option value="gmail.com">gmail.com</option>
+        <option value="daum.net">daum.net</option>
+      </select>
+    </div>
 
-      <div class="wheel-wrap">
-        <div class="wheel-ring"></div>
-        <div class="wheel" id="wheel">
-          <!-- wedges injected by JS -->
-        </div>
-        <div class="wheel__center">
-          <img class="wheel__badge" src="images/logo/polestar1.jpg" alt="POLESTAR">
-          <div class="wheel__cta">스토어 둘러보기 ➔</div>
-        </div>
-      </div>
+    <div class="field-row">
+      <input class="field" type="text" placeholder="아이디 (8~13자)" id="join-id">
+      <button type="button" class="field-btn" id="btn-check-id">중복확인</button>
+    </div>
+    <div class="field-hint">영문/숫자 조합 8~13자로 입력해 주세요.</div>
 
-      <div class="hero-scroll-cue">SCROLL TO EXPLORE ARTISTS</div>
-    </section>
+    <input class="field" type="password" placeholder="비밀번호 (6자 이상)" id="join-pw">
+    <input class="field" type="password" placeholder="비밀번호 확인" id="join-pw-confirm">
 
-    <div id="brand-showcase-root"></div>
+    <div class="field-row">
+      <input class="field" type="text" placeholder="우편번호" id="join-postcode" readonly style="max-width:140px;">
+      <button type="button" class="field-btn" id="btn-find-address">도로명주소 찾기</button>
+    </div>
+    <input class="field" type="text" placeholder="주소" id="join-address" readonly>
+    <input class="field" type="text" placeholder="상세주소" id="join-address-detail">
 
-  </section>
+    <label class="checkbox-row"><input type="checkbox" id="join-agree" required> (필수) 개인정보 수집 및 이용 동의</label>
+    <label class="checkbox-row"><input type="checkbox" id="join-marketing"> (선택) 마케팅 정보 수신 동의</label>
 
-  <!-- ---------- LOOKBOOK VIEW ---------- -->
-  <section id="view-lookbook" class="view" hidden></section>
-
-  <!-- ---------- DETAIL VIEW ---------- -->
-  <section id="view-detail" class="view" hidden></section>
-
+    <button type="submit" class="submit-btn">회원가입</button>
+  </form>
+  <div class="modal__switch">이미 계정이 있으신가요? <a href="#" data-action="open-login">로그인</a></div>
 </main>
 
 <!-- ============ FOOTER ============ -->
@@ -97,19 +111,11 @@
   </div>
 </footer>
 
-<!-- ============ FLOATING TOP ============ -->
-<button id="floating-top" aria-label="맨 위로">
-  <span class="arrow">▲</span>
-  <span class="label">TOP</span>
-</button>
-
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
-<!-- ============ MODAL BACKDROP (shared) ============ -->
+<!-- ============ MODAL BACKDROP + LOGIN MODAL ============ -->
 <div class="modal-backdrop" id="modal-backdrop" hidden></div>
-
-<!-- ============ LOGIN MODAL ============ -->
 <div class="modal modal--auth" id="modal-login" hidden>
   <button class="modal__close" data-action="close-modal">✕</button>
   <div class="modal__title">LOGIN</div>
@@ -119,43 +125,12 @@
     <label class="checkbox-row"><input type="checkbox"> 자동로그인</label>
     <button type="submit" class="submit-btn">로그인</button>
   </form>
-  <div class="modal__switch">
-    <a href="#" data-action="open-findid">아이디 찾기</a> ·
-    <a href="#" data-action="open-findpw">비밀번호 찾기</a> ·
-    <a href="signup.html">회원가입</a>
-  </div>
-</div>
-
-<!-- ============ FIND ID / PW MODAL ============ -->
-<div class="modal modal--auth" id="modal-find" hidden>
-  <button class="modal__close" data-action="close-modal">✕</button>
-  <div class="modal__title" id="find-title">아이디 / 비밀번호 찾기</div>
-  <div class="tab-bar">
-    <button class="tab-btn is-active" data-find-tab="id">아이디 찾기</button>
-    <button class="tab-btn" data-find-tab="pw">비밀번호 찾기</button>
-  </div>
-  <div id="find-id-panel">
-    <div class="field-row" style="margin-bottom:16px;">
-      <button type="button" class="field-btn find-method is-active" data-method="email">이메일로 찾기</button>
-      <button type="button" class="field-btn find-method" data-method="phone">휴대폰 인증으로 찾기</button>
-    </div>
-    <input class="field" type="text" placeholder="이름">
-    <input class="field" type="text" placeholder="이메일 또는 휴대폰 번호">
-    <button type="button" class="submit-btn">아이디 찾기</button>
-  </div>
-  <div id="find-pw-panel" hidden>
-    <input class="field" type="text" placeholder="아이디">
-    <div class="field-row" style="margin-bottom:16px;">
-      <button type="button" class="field-btn find-method is-active" data-method="email">이메일로 인증</button>
-      <button type="button" class="field-btn find-method" data-method="phone">휴대폰으로 인증</button>
-    </div>
-    <button type="button" class="submit-btn">임시 비밀번호 받기</button>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/common.js"></script>
-<script src="js/main.js"></script>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="js/signup.js"></script>
 </body>
 </html>

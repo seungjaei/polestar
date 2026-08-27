@@ -229,14 +229,151 @@ async function changeCartQty(idx, item, delta, user) {
   }
 }
 
+async function changeCartOption(idx, item, { color, size }, user) {
+  if (!item) return;
+  if (user) {
+    await sb.from('cart_items').update({ color, size }).eq('id', item.id);
+  } else {
+    const cart = loadGuestCart();
+    cart[idx].color = color;
+    cart[idx].size = size;
+    saveGuestCart(cart);
+  }
+}
+
+async function removeCartItems(items, user) {
+  if (!items.length) return;
+  if (user) {
+    await sb.from('cart_items').delete().in('id', items.map(it => it.id));
+  } else {
+    const cart = loadGuestCart();
+    const removeKeys = new Set(items.map(it => `${it.productId}__${it.color}__${it.size}`));
+    saveGuestCart(cart.filter(c => !removeKeys.has(`${c.productId}__${c.color}__${c.size}`)));
+  }
+}
+
+/* ---------------------------------------------------------
+   RECENTLY VIEWED / WISHLIST (localStorage only — no DB table;
+   product detail page records views + wishlist toggles here,
+   mypage.html reads them back)
+--------------------------------------------------------- */
+function addRecentlyViewed(productId) {
+  let list = getRecentlyViewed();
+  list = list.filter(id => id !== productId);
+  list.unshift(productId);
+  localStorage.setItem('polestar_recent', JSON.stringify(list.slice(0, 12)));
+}
+function getRecentlyViewed() {
+  try { return JSON.parse(localStorage.getItem('polestar_recent') || '[]'); } catch { return []; }
+}
+function getWishlist() {
+  try { return JSON.parse(localStorage.getItem('polestar_wishlist') || '[]'); } catch { return []; }
+}
+function isWishlisted(productId) {
+  return getWishlist().includes(productId);
+}
+function toggleWishlist(productId) {
+  const list = getWishlist();
+  const idx = list.indexOf(productId);
+  if (idx >= 0) list.splice(idx, 1); else list.unshift(productId);
+  localStorage.setItem('polestar_wishlist', JSON.stringify(list));
+  return list.includes(productId);
+}
+
+/* ---------------------------------------------------------
+   SHARED HEADER (every page: index.html + signup/cart/checkout/
+   mypage/support.html all ship the same #site-header + #modal-login
+   markup — this is the one shared DOM component in common.js so
+   login/logout/cart-badge behavior stays identical everywhere)
+--------------------------------------------------------- */
+function closeAllModals() {
+  $all('.modal').forEach(m => { m.hidden = true; });
+  const backdrop = $('#modal-backdrop');
+  if (backdrop) backdrop.hidden = true;
+}
+function openModalEl(id) {
+  closeAllModals();
+  $('#' + id).hidden = false;
+  $('#modal-backdrop').hidden = false;
+}
+
+async function mountHeader() {
+  const { user } = await getSessionAndProfile();
+  const loginBtn = $('#btn-login');
+  const joinBtn = $('#btn-join');
+  if (loginBtn) {
+    loginBtn.textContent = user ? 'LOGOUT' : 'LOGIN';
+    loginBtn.dataset.action = user ? 'logout' : 'open-login';
+  }
+  if (joinBtn) joinBtn.style.display = user ? 'none' : '';
+  const cart = await loadCart(user);
+  const countEl = $('#cart-count');
+  if (countEl) countEl.textContent = String(cart.reduce((s, c) => s + c.qty, 0));
+  return user;
+}
+
+function wireHeaderEvents(opts = {}) {
+  const onLogoClick = opts.onLogoClick || (() => { location.href = 'index.html'; });
+  const afterLogin = opts.afterLogin || (() => { location.reload(); });
+
+  document.addEventListener('click', async e => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    const action = target.dataset.action;
+    if (action === 'open-login') openModalEl('modal-login');
+    else if (action === 'close-modal') closeAllModals();
+    else if (action === 'logout') { await signOut(); location.reload(); }
+  });
+
+  $('#modal-backdrop')?.addEventListener('click', closeAllModals);
+  $('#header-logo')?.addEventListener('click', onLogoClick);
+
+  $('#form-login')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const idOrEmail = $('#login-id').value.trim();
+    const pw = $('#login-pw').value;
+    if (!idOrEmail || !pw) return;
+
+    let email = idOrEmail;
+    if (!idOrEmail.includes('@')) {
+      const { data: resolvedEmail, error: lookupError } = await sb.rpc('get_email_by_username', { p_username: idOrEmail });
+      if (lookupError || !resolvedEmail) { showToast('아이디 또는 비밀번호가 올바르지 않습니다'); return; }
+      email = resolvedEmail;
+    }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      showToast(error.message.includes('Email not confirmed')
+        ? '이메일 인증 후 로그인해 주세요'
+        : '아이디 또는 비밀번호가 올바르지 않습니다');
+      return;
+    }
+    await mergeGuestCartIntoDb(data.user);
+    showToast('로그인 되었습니다');
+    setTimeout(afterLogin, 400);
+  });
+}
+
+async function requireAuth(redirectTo) {
+  const { user, profile } = await getSessionAndProfile();
+  if (!user) {
+    showToast('로그인이 필요합니다');
+    setTimeout(() => { location.href = redirectTo || 'index.html'; }, 600);
+    return null;
+  }
+  return { user, profile };
+}
+
 /* ---------------------------------------------------------
    EXPORT
 --------------------------------------------------------- */
 window.Polestar = {
   BRANDS, BRAND_ORDER, COLORS, SIZES, findProduct, FAQ_DATA,
   $, $all, won, showToast,
-  getSessionAndProfile, signOut, checkUsernameExists,
-  loadCart, addToCart, removeCartItem, changeCartQty, mergeGuestCartIntoDb
+  getSessionAndProfile, signOut, checkUsernameExists, requireAuth,
+  loadCart, addToCart, removeCartItem, removeCartItems, changeCartQty, changeCartOption, mergeGuestCartIntoDb,
+  closeAllModals, openModalEl, mountHeader, wireHeaderEvents,
+  addRecentlyViewed, getRecentlyViewed, getWishlist, isWishlisted, toggleWishlist
 };
 
 })();

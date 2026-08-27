@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주문/결제 — POLESTAR</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="is-subpage">
+
+<!-- ============ HEADER ============ -->
+<header id="site-header">
+  <div class="header__inner">
+    <span class="header__breadcrumb" id="breadcrumb">HOME &gt; CART &gt; CHECKOUT</span>
+    <div class="header__logo" id="header-logo">
+      <img src="images/logo/polestar1.jpg" alt="POLESTAR">
+    </div>
+    <div class="header__session">
+      <button data-action="open-login" id="btn-login">LOGIN</button>
+      <a href="signup.html" id="btn-join">JOIN</a>
+      <a href="cart.html" id="btn-cart">CART(<span id="cart-count">0</span>)</a>
+      <a href="mypage.html" id="btn-mypage">MYPAGE</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PAGE ============ -->
+<main class="page-shell page-shell--wide">
+  <div class="page-title">CHECKOUT</div>
+
+  <div class="checkout-grid">
+    <div>
+      <div class="checkout-section">
+        <div class="checkout-section__title">주문 상품 정보</div>
+        <div id="order-summary"></div>
+      </div>
+
+      <div class="checkout-section">
+        <div class="checkout-section__title">배송지 정보</div>
+        <input class="field" type="text" placeholder="수령인" id="ship-name">
+        <input class="field" type="tel" placeholder="연락처" id="ship-phone">
+        <div class="field-row">
+          <input class="field" type="text" placeholder="우편번호" id="ship-postcode" readonly style="max-width:140px;">
+          <button type="button" class="field-btn" id="btn-find-address">도로명주소 찾기</button>
+        </div>
+        <input class="field" type="text" placeholder="주소" id="ship-address" readonly>
+        <input class="field" type="text" placeholder="상세주소" id="ship-address-detail">
+        <select class="field select-field" id="ship-memo">
+          <option value="">배송 메모 선택 (선택)</option>
+          <option value="배송 전 연락 부탁드려요">배송 전 연락 부탁드려요</option>
+          <option value="부재 시 경비실에 맡겨주세요">부재 시 경비실에 맡겨주세요</option>
+          <option value="부재 시 문 앞에 놓아주세요">부재 시 문 앞에 놓아주세요</option>
+        </select>
+      </div>
+
+      <div class="checkout-section">
+        <div class="checkout-section__title">결제 수단</div>
+        <div class="payment-methods">
+          <label class="payment-method"><input type="radio" name="pay-method" value="신용카드"> 신용카드</label>
+          <label class="payment-method"><input type="radio" name="pay-method" value="간편결제"> 간편결제</label>
+          <label class="payment-method"><input type="radio" name="pay-method" value="무통장 입금"> 무통장 입금</label>
+        </div>
+        <label class="checkbox-row" style="margin-top:16px;"><input type="checkbox" id="pay-agree"> (필수) 테스트 결제 진행에 동의합니다 — 실제 결제가 이루어지지 않는 데모 주문입니다.</label>
+      </div>
+    </div>
+
+    <aside class="checkout-sidebar">
+      <div class="checkout-section__title" style="border:none; margin-bottom:8px;">결제 금액</div>
+      <div id="price-breakdown"></div>
+      <button class="checkout-pay-btn" id="btn-pay">결제하기</button>
+    </aside>
+  </div>
+</main>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============ MODAL BACKDROP + LOGIN MODAL ============ -->
+<div class="modal-backdrop" id="modal-backdrop" hidden></div>
+<div class="modal modal--auth" id="modal-login" hidden>
+  <button class="modal__close" data-action="close-modal">✕</button>
+  <div class="modal__title">LOGIN</div>
+  <form id="form-login">
+    <input class="field" type="text" placeholder="아이디" id="login-id" required>
+    <input class="field" type="password" placeholder="비밀번호" id="login-pw" required>
+    <label class="checkbox-row"><input type="checkbox"> 자동로그인</label>
+    <button type="submit" class="submit-btn">로그인</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/common.js"></script>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="js/checkout.js"></script>
+</body>
+</html>

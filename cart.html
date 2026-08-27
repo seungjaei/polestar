@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POLESTAR — Korean Hip-Hop Artist Culture Showcase</title>
+<title>장바구니 — POLESTAR</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="is-subpage">
 
 <!-- ============ HEADER ============ -->
 <header id="site-header">
   <div class="header__inner">
-    <span class="header__breadcrumb" id="breadcrumb"></span>
+    <span class="header__breadcrumb" id="breadcrumb">HOME &gt; CART</span>
     <div class="header__logo" id="header-logo">
       <img src="images/logo/polestar1.jpg" alt="POLESTAR">
     </div>
@@ -24,42 +24,22 @@
   </div>
 </header>
 
-<!-- ============ PROMO POPUPS ============ -->
-<div id="promo-popups"></div>
+<!-- ============ PAGE ============ -->
+<main class="page-shell page-shell--wide">
+  <div class="page-title">SHOPPING BAG</div>
 
-<!-- ============ APP ROOT ============ -->
-<main id="app">
+  <div class="cart-table__head">
+    <label><input type="checkbox" class="cart-row__check" id="select-all"> 전체 선택</label>
+    <div class="cart-table__actions">
+      <button type="button" id="btn-delete-selected">선택 삭제</button>
+      <button type="button" id="btn-delete-all">전체 삭제</button>
+    </div>
+  </div>
 
-  <!-- ---------- HOME VIEW ---------- -->
-  <section id="view-home" class="view">
+  <div id="cart-rows"></div>
 
-    <section id="hero">
-      <div class="hero-bg" id="hero-bg"></div>
-
-      <div class="wheel-wrap">
-        <div class="wheel-ring"></div>
-        <div class="wheel" id="wheel">
-          <!-- wedges injected by JS -->
-        </div>
-        <div class="wheel__center">
-          <img class="wheel__badge" src="images/logo/polestar1.jpg" alt="POLESTAR">
-          <div class="wheel__cta">스토어 둘러보기 ➔</div>
-        </div>
-      </div>
-
-      <div class="hero-scroll-cue">SCROLL TO EXPLORE ARTISTS</div>
-    </section>
-
-    <div id="brand-showcase-root"></div>
-
-  </section>
-
-  <!-- ---------- LOOKBOOK VIEW ---------- -->
-  <section id="view-lookbook" class="view" hidden></section>
-
-  <!-- ---------- DETAIL VIEW ---------- -->
-  <section id="view-detail" class="view" hidden></section>
-
+  <div class="cart-total-box" id="cart-total-box"></div>
+  <button class="cart-order-btn" id="btn-order" disabled>주문하기</button>
 </main>
 
 <!-- ============ FOOTER ============ -->
@@ -97,19 +77,11 @@
   </div>
 </footer>
 
-<!-- ============ FLOATING TOP ============ -->
-<button id="floating-top" aria-label="맨 위로">
-  <span class="arrow">▲</span>
-  <span class="label">TOP</span>
-</button>
-
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
-<!-- ============ MODAL BACKDROP (shared) ============ -->
+<!-- ============ MODAL BACKDROP + LOGIN MODAL ============ -->
 <div class="modal-backdrop" id="modal-backdrop" hidden></div>
-
-<!-- ============ LOGIN MODAL ============ -->
 <div class="modal modal--auth" id="modal-login" hidden>
   <button class="modal__close" data-action="close-modal">✕</button>
   <div class="modal__title">LOGIN</div>
@@ -119,43 +91,11 @@
     <label class="checkbox-row"><input type="checkbox"> 자동로그인</label>
     <button type="submit" class="submit-btn">로그인</button>
   </form>
-  <div class="modal__switch">
-    <a href="#" data-action="open-findid">아이디 찾기</a> ·
-    <a href="#" data-action="open-findpw">비밀번호 찾기</a> ·
-    <a href="signup.html">회원가입</a>
-  </div>
-</div>
-
-<!-- ============ FIND ID / PW MODAL ============ -->
-<div class="modal modal--auth" id="modal-find" hidden>
-  <button class="modal__close" data-action="close-modal">✕</button>
-  <div class="modal__title" id="find-title">아이디 / 비밀번호 찾기</div>
-  <div class="tab-bar">
-    <button class="tab-btn is-active" data-find-tab="id">아이디 찾기</button>
-    <button class="tab-btn" data-find-tab="pw">비밀번호 찾기</button>
-  </div>
-  <div id="find-id-panel">
-    <div class="field-row" style="margin-bottom:16px;">
-      <button type="button" class="field-btn find-method is-active" data-method="email">이메일로 찾기</button>
-      <button type="button" class="field-btn find-method" data-method="phone">휴대폰 인증으로 찾기</button>
-    </div>
-    <input class="field" type="text" placeholder="이름">
-    <input class="field" type="text" placeholder="이메일 또는 휴대폰 번호">
-    <button type="button" class="submit-btn">아이디 찾기</button>
-  </div>
-  <div id="find-pw-panel" hidden>
-    <input class="field" type="text" placeholder="아이디">
-    <div class="field-row" style="margin-bottom:16px;">
-      <button type="button" class="field-btn find-method is-active" data-method="email">이메일로 인증</button>
-      <button type="button" class="field-btn find-method" data-method="phone">휴대폰으로 인증</button>
-    </div>
-    <button type="button" class="submit-btn">임시 비밀번호 받기</button>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/common.js"></script>
-<script src="js/main.js"></script>
+<script src="js/cart-page.js"></script>
 </body>
 </html>

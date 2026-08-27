@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마이페이지 — POLESTAR</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="is-subpage">
+
+<!-- ============ HEADER ============ -->
+<header id="site-header">
+  <div class="header__inner">
+    <span class="header__breadcrumb" id="breadcrumb">HOME &gt; MY PAGE</span>
+    <div class="header__logo" id="header-logo">
+      <img src="images/logo/polestar1.jpg" alt="POLESTAR">
+    </div>
+    <div class="header__session">
+      <button data-action="open-login" id="btn-login">LOGIN</button>
+      <a href="signup.html" id="btn-join">JOIN</a>
+      <a href="cart.html" id="btn-cart">CART(<span id="cart-count">0</span>)</a>
+      <a href="mypage.html" id="btn-mypage">MYPAGE</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PAGE ============ -->
+<main class="page-shell page-shell--wide">
+  <div class="page-title">MY PAGE</div>
+
+  <div class="mypage__profile">
+    <div>
+      <div class="mypage__name" id="profile-name" style="font-size:24px;"></div>
+      <div class="mypage__email" id="profile-email" style="font-size:14px;"></div>
+    </div>
+    <div class="mileage-badge" id="profile-mileage"></div>
+  </div>
+
+  <div class="mypage-grid">
+    <nav class="mypage-nav">
+      <button type="button" class="is-active" data-panel="orders">주문내역 / 배송조회</button>
+      <button type="button" data-panel="profile">회원정보 수정</button>
+      <button type="button" data-panel="shopping">쇼핑 (장바구니·위시리스트)</button>
+    </nav>
+
+    <div>
+      <section class="mypage-panel is-active" id="panel-orders"></section>
+
+      <section class="mypage-panel" id="panel-profile">
+        <div class="profile-edit-form">
+          <div class="checkout-section__title">휴대폰 번호 / 마케팅 수신 동의</div>
+          <input class="field" type="tel" placeholder="휴대폰 번호" id="edit-phone">
+          <label class="checkbox-row"><input type="checkbox" id="edit-marketing"> 마케팅 정보 수신 동의</label>
+          <button type="button" class="submit-btn" id="btn-save-profile" style="margin-bottom:36px;">저장</button>
+
+          <div class="checkout-section__title">비밀번호 변경</div>
+          <form id="form-change-pw">
+            <input class="field" type="password" placeholder="새 비밀번호 (6자 이상)" id="new-pw">
+            <input class="field" type="password" placeholder="새 비밀번호 확인" id="new-pw-confirm">
+            <button type="submit" class="submit-btn" style="margin-bottom:36px;">비밀번호 변경</button>
+          </form>
+
+          <button type="button" class="text-btn" id="btn-withdraw">회원탈퇴</button>
+        </div>
+      </section>
+
+      <section class="mypage-panel" id="panel-shopping">
+        <div class="checkout-section__title">장바구니</div>
+        <a href="cart.html" class="submit-btn" style="display:block; text-align:center; text-decoration:none; margin-bottom:40px;">장바구니 바로가기</a>
+
+        <div class="checkout-section__title">최근 본 상품</div>
+        <div id="recent-products" style="margin-bottom:40px;"></div>
+
+        <div class="checkout-section__title">위시리스트</div>
+        <div id="wishlist-products"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============ MODAL BACKDROP + LOGIN MODAL ============ -->
+<div class="modal-backdrop" id="modal-backdrop" hidden></div>
+<div class="modal modal--auth" id="modal-login" hidden>
+  <button class="modal__close" data-action="close-modal">✕</button>
+  <div class="modal__title">LOGIN</div>
+  <form id="form-login">
+    <input class="field" type="text" placeholder="아이디" id="login-id" required>
+    <input class="field" type="password" placeholder="비밀번호" id="login-pw" required>
+    <label class="checkbox-row"><input type="checkbox"> 자동로그인</label>
+    <button type="submit" class="submit-btn">로그인</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/common.js"></script>
+<script src="js/mypage-page.js"></script>
+</body>
+</html>
