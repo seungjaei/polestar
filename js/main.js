@@ -459,17 +459,11 @@ function render(state) {
   document.body.classList.toggle('is-subpage', state.view !== 'home');
   document.documentElement.classList.toggle('is-home-snap', state.view === 'home');
 
-  const crumb = $('#breadcrumb');
-  if (state.view === 'lookbook') {
-    renderLookbook(state.brand);
-    crumb.textContent = `HOME > ${BRANDS[state.brand]?.name.toUpperCase() || ''} > LOOKBOOK`;
-  } else if (state.view === 'detail') {
-    renderDetail(state.productId);
-    const found = findProduct(state.productId);
-    crumb.textContent = found ? `HOME > ${found.brand.name.toUpperCase()} > ${found.product.name}` : '';
-  } else {
-    crumb.textContent = '';
-  }
+  // Lookbook/detail already render their own in-page .breadcrumb — the
+  // header's #breadcrumb stays empty everywhere to avoid showing the
+  // same "HOME > BRAND > ..." path twice.
+  if (state.view === 'lookbook') renderLookbook(state.brand);
+  else if (state.view === 'detail') renderDetail(state.productId);
 
   window.scrollTo(0, 0);
 }
