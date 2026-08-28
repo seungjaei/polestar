@@ -1363,6 +1363,12 @@ body.is-subpage .header__breadcrumb {
   }
   #brand-showcase-root::-webkit-scrollbar { display: none; }
   .showcase { flex: 0 0 100vw; width: 100vw; }
+
+  /* Hero wheel: on mobile the wheel-wrap's min-width:280px is large
+     relative to a phone's viewport, so the logos need to shrink to
+     stay inside the circular clip — 2/3 of desktop size. */
+  .wheel__logo { width: 41%; max-width: 60px; }
+  .wheel__wedge[data-brand="blazed"] .wheel__logo { width: 83%; max-width: 120px; }
 }
 @media (max-width: 900px) {
   .checkout-grid { grid-template-columns: 1fr; }
