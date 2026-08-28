@@ -451,6 +451,20 @@ body.is-subpage .header__breadcrumb {
   word-break: keep-all;
   overflow-wrap: break-word;
 }
+/* Secondary copy, desktop only — fills the leftover space in the story
+   box below the main description. Kept visibly grayer than .showcase__desc
+   (var(--text-muted) vs near-white) to read as a supporting layer, not a
+   repeat of the primary copy. Hidden on mobile (see responsive block). */
+.showcase__extra {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
 
 .showcase__badge {
   width: 100%;
@@ -1344,6 +1358,9 @@ body.is-subpage .header__breadcrumb {
   .showcase__story { height: auto; max-height: 24vh; padding: 16px 18px; }
   .showcase__label { margin-bottom: 10px; }
   .showcase__desc { font-size: 12.5px; line-height: 1.55; }
+  /* Secondary/gray copy is desktop-only — the mobile card is already
+     tight for 100vh, so it stays hidden here. */
+  .showcase__extra { display: none; }
   .showcase__badge { height: auto; padding: 14px 18px; }
   .showcase__title { font-size: 19px; margin-bottom: 3px; }
   .showcase__director { font-size: 15px; margin-bottom: 8px; }

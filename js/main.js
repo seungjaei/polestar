@@ -141,6 +141,7 @@ function initShowcase() {
             <div class="showcase__story">
               <div class="showcase__label">${b.label}</div>
               <p class="showcase__desc">${b.desc}</p>
+              <p class="showcase__extra">${b.descExtra}</p>
             </div>
             <div class="showcase__badge">
               <div class="showcase__title">${b.name}</div>
