@@ -149,11 +149,13 @@ function initShowcase() {
               <button class="showcase__btn" data-action="nav-brand" data-brand="${key}">VIEW LOOKBOOK ➔</button>
             </div>
           </div>
-          <div class="showcase__phone" data-action="open-video-modal" data-brand="${key}">
-            <div class="phone-notch"></div>
-            <video muted playsinline data-brand="${key}"></video>
-            <div class="phone-home-bar"></div>
-            <button class="showcase__mute" data-action="toggle-mute" data-brand="${key}">UNMUTE</button>
+          <div class="showcase__phone-wrap">
+            <div class="showcase__phone" data-action="open-video-modal" data-brand="${key}">
+              <div class="phone-notch"></div>
+              <video muted playsinline data-brand="${key}"></video>
+              <div class="phone-home-bar"></div>
+              <button class="showcase__mute" data-action="toggle-mute" data-brand="${key}">UNMUTE</button>
+            </div>
             ${i === 0 ? `<span class="showcase__swipe-hint" aria-hidden="true">➔</span>` : ''}
           </div>
         </div>

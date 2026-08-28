@@ -540,6 +540,12 @@ body.is-subpage .header__breadcrumb {
 }
 .showcase__btn:hover { background: var(--accent); border-color: var(--accent); }
 
+.showcase__phone-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
 .showcase__phone {
   flex-shrink: 0;
   width: 12vw;
@@ -1405,7 +1411,8 @@ body.is-subpage .header__breadcrumb {
   .showcase__title { font-size: 19px; margin-bottom: 3px; }
   .showcase__director { font-size: 15px; margin-bottom: 8px; }
   .showcase__btn { padding: 8px 14px; font-size: 12px; }
-  .showcase__phone { width: 32vw; min-width: 112px; align-self: center; }
+  .showcase__phone { width: 32vw; min-width: 112px; }
+  .showcase__phone-wrap { align-self: center; }
 
   /* Brand-to-brand navigation on mobile: horizontal touch swipe instead
      of vertical scroll. #brand-showcase-root becomes its own left/right
@@ -1468,7 +1475,8 @@ body.is-subpage .header__breadcrumb {
      back from lookbook/a subpage. Force it fully out of the render tree
      on home so there's no such window at all. */
   body:not(.is-subpage) .header__hamburger,
-  body:not(.is-subpage) .header__nav {
+  body:not(.is-subpage) .header__nav,
+  body:not(.is-subpage) .header__nav-backdrop {
     display: none;
   }
 
@@ -1487,24 +1495,17 @@ body.is-subpage .header__breadcrumb {
     background: rgba(0,0,0,0.5);
   }
 
-  /* "Swipe to see other brands" cue — first card only, arrow-only,
-     overlaid on the right edge of the phone mockup video so it reads
-     as "swipe this". .showcase__phone has its own overflow:hidden and
-     position:relative, so this is a plain child of it rather than of
-     .showcase (which would otherwise trap it under #promo-popups —
-     see the earlier bottom-anchored version this replaced). */
+  /* "Swipe to see other brands" cue — first card only, arrow-only, in
+     the empty space to the right of the phone mockup (a plain flex
+     sibling inside .showcase__phone-wrap, not inside the video itself
+     — .showcase__phone clips its own overflow, and the bottom of the
+     screen is where #promo-popups lives, so neither is a safe spot). */
   #showcase-iabstudio .showcase__swipe-hint {
     display: block;
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
     font-size: 34px;
     line-height: 1;
     color: #fff;
     text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.75);
-    pointer-events: none;
     animation: swipeHintNudge 1.4s ease-in-out infinite;
   }
 }
