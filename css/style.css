@@ -41,6 +41,12 @@ html, body {
   scroll-behavior: smooth;
 }
 
+/* Home view only: chains #hero -> each .showcase -> #site-footer into one
+   full-page snap sequence (class toggled on <html> by main.js render()). */
+html.is-home-snap {
+  scroll-snap-type: y mandatory;
+}
+
 img, video { max-width: 100%; display: block; }
 button, input, select, textarea { font-family: inherit; }
 button { cursor: pointer; }
@@ -228,6 +234,8 @@ body.is-subpage .header__breadcrumb {
   position: relative;
   overflow: hidden;
   background: var(--bg);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .hero-bg {
@@ -249,18 +257,6 @@ body.is-subpage .header__breadcrumb {
   position: absolute;
   inset: 0;
   background: rgba(10, 10, 10, 0.75);
-}
-
-.hero-scroll-cue {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--text-secondary);
-  text-align: center;
 }
 
 .wheel-wrap {
@@ -371,14 +367,10 @@ body.is-subpage .header__breadcrumb {
 /* ============================================================
    BRAND SHOWCASE — FULLSCREEN SLIDES
    ============================================================ */
-#brand-showcase-root {
-  height: 100vh;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-}
-#brand-showcase-root::-webkit-scrollbar { display: none; }
-
+/* Desktop: plain flow wrapper — its .showcase children snap directly
+   against the page-level scroller (html.is-home-snap) together with
+   #hero, giving one continuous full-page snap chain. Mobile turns this
+   into its own horizontal swipe container (see responsive block below). */
 .showcase {
   height: 100vh;
   width: 100%;
@@ -1133,6 +1125,10 @@ body.is-subpage .header__breadcrumb {
   min-height: 480px;
   background: var(--bg);
   border-top: 1px solid #262626;
+  /* Final stop in the home-view snap chain — without this the mandatory
+     snap would bounce back to the last showcase and the footer would
+     become unreachable by scroll. */
+  scroll-snap-align: start;
 }
 .footer__inner {
   padding: 80px 100px 40px 100px;
@@ -1328,22 +1324,45 @@ body.is-subpage .header__breadcrumb {
   .breadcrumb, .detail-nav-wrap, .polaroid-grid { padding-left: 40px; padding-right: 40px; }
 
   /* PPT/artist card: desktop's side-by-side row layout doesn't fit a
-     phone screen — stack into one scrollable column sized to 100vh. */
+     phone screen — stack into one column sized to fit fully within
+     100vh (no scroll, no cropping). */
   .showcase__content {
-    left: 6vw; right: 6vw; top: 4vh; height: 92vh;
+    left: 6vw; right: 6vw; top: 3vh; height: 94vh;
     flex-direction: column;
     align-items: stretch;
-    gap: 2vh;
-    overflow-y: auto;
-    scrollbar-width: none;
+    justify-content: center;
+    gap: 1.4vh;
+    overflow: hidden;
   }
-  .showcase__content::-webkit-scrollbar { display: none; }
-  .showcase__story-col { height: auto; flex: none; gap: 2vh; }
-  .showcase__story { height: auto; max-height: 32vh; padding: 24px 20px; }
-  .showcase__badge { height: auto; padding: 20px; }
-  .showcase__title { font-size: 22px; }
-  .showcase__director { font-size: 18px; }
-  .showcase__phone { width: 40vw; min-width: 130px; align-self: center; }
+  .showcase__story-col { height: auto; flex: none; gap: 1.4vh; }
+  .showcase__story { height: auto; max-height: 24vh; padding: 16px 18px; }
+  .showcase__label { margin-bottom: 10px; }
+  .showcase__desc { font-size: 12.5px; line-height: 1.55; }
+  .showcase__badge { height: auto; padding: 14px 18px; }
+  .showcase__title { font-size: 19px; margin-bottom: 3px; }
+  .showcase__director { font-size: 15px; margin-bottom: 8px; }
+  .showcase__btn { padding: 8px 14px; font-size: 12px; }
+  .showcase__phone { width: 32vw; min-width: 112px; align-self: center; }
+
+  /* Brand-to-brand navigation on mobile: horizontal touch swipe instead
+     of vertical scroll. #brand-showcase-root becomes its own left/right
+     snap-scroll strip; it still snaps vertically as ONE block against
+     the page-level scroller (html.is-home-snap), right after #hero. */
+  #brand-showcase-root {
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #brand-showcase-root::-webkit-scrollbar { display: none; }
+  .showcase { flex: 0 0 100vw; width: 100vw; }
 }
 @media (max-width: 900px) {
   .checkout-grid { grid-template-columns: 1fr; }

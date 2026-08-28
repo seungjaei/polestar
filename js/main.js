@@ -448,6 +448,7 @@ function render(state) {
   detail.hidden = state.view !== 'detail';
 
   document.body.classList.toggle('is-subpage', state.view !== 'home');
+  document.documentElement.classList.toggle('is-home-snap', state.view === 'home');
 
   const crumb = $('#breadcrumb');
   if (state.view === 'lookbook') {
