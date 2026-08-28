@@ -82,7 +82,13 @@ ul { list-style: none; margin: 0; padding: 0; }
 .header__inner {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  /* minmax(0, 1fr) — not plain 1fr — so both side columns always split
+     leftover space equally. With plain 1fr, each column's floor is its
+     own content's min-content width; since the (invisible-on-home)
+     session column's 4 nav items need far more min-content than the
+     empty breadcrumb column, that imbalance survives once the header
+     narrows on mobile and drags the centered logo off-center. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
 }
 
@@ -1366,9 +1372,13 @@ body.is-subpage .header__breadcrumb {
 
   /* Hero wheel: on mobile the wheel-wrap's min-width:280px is large
      relative to a phone's viewport, so the logos need to shrink to
-     stay inside the circular clip — 2/3 of desktop size. */
-  .wheel__logo { width: 41%; max-width: 60px; }
-  .wheel__wedge[data-brand="blazed"] .wheel__logo { width: 83%; max-width: 120px; }
+     stay inside the circular clip — 70% of the already-2/3-scaled size. */
+  .wheel__logo { width: 28.7%; max-width: 42px; }
+  .wheel__wedge[data-brand="blazed"] .wheel__logo { width: 58.1%; max-width: 84px; }
+
+  /* Center badge (POLESTAR logo) + CTA text — 70% of desktop size. */
+  .wheel__badge { width: 56px; height: 56px; }
+  .wheel__cta { font-size: 9.8px; }
 }
 @media (max-width: 900px) {
   .checkout-grid { grid-template-columns: 1fr; }
