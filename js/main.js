@@ -130,7 +130,7 @@ function syncWheelBackground() {
 --------------------------------------------------------- */
 function initShowcase() {
   const root = $('#brand-showcase-root');
-  root.innerHTML = BRAND_ORDER.map(key => {
+  root.innerHTML = BRAND_ORDER.map((key, i) => {
     const b = BRANDS[key];
     return `
       <section class="showcase" id="showcase-${key}" data-brand="${key}">
@@ -156,6 +156,11 @@ function initShowcase() {
             <button class="showcase__mute" data-action="toggle-mute" data-brand="${key}">UNMUTE</button>
           </div>
         </div>
+        ${i === 0 ? `
+        <div class="showcase__swipe-hint" aria-hidden="true">
+          <span>옆으로 넘겨서 다른 브랜드 보기</span>
+          <span class="showcase__swipe-hint-arrow">➔</span>
+        </div>` : ''}
       </section>
     `;
   }).join('');
@@ -182,6 +187,19 @@ function initShowcase() {
   }, { threshold: 0.5 });
 
   $all('.showcase', root).forEach(el => io.observe(el));
+
+  // Mobile-only swipe hint on the first (iabstudio) card — dismiss it
+  // for good the moment the user actually swipes.
+  const hint = root.querySelector('.showcase__swipe-hint');
+  if (hint) {
+    const onSwipe = () => {
+      if (root.scrollLeft > 10) {
+        hint.remove();
+        root.removeEventListener('scroll', onSwipe);
+      }
+    };
+    root.addEventListener('scroll', onSwipe, { passive: true });
+  }
 }
 
 function toggleMute(brandKey, btn) {

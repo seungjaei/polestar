@@ -589,6 +589,16 @@ body.is-subpage .header__breadcrumb {
   letter-spacing: 0.04em;
 }
 
+/* Mobile-only "swipe to see other brands" cue — only ever rendered on
+   the first (iabstudio) card by main.js; hidden entirely on desktop
+   here, shown + animated under the mobile breakpoint below. */
+.showcase__swipe-hint { display: none; }
+
+@keyframes swipeHintNudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(8px); }
+}
+
 /* ============================================================
    LOOKBOOK VIEW
    ============================================================ */
@@ -1447,6 +1457,39 @@ body.is-subpage .header__breadcrumb {
     text-align: left;
     padding: 12px 0;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  /* .header__session already fades out via opacity on the home view, but
+     that 300ms transition leaves a brief window where the hamburger is
+     still painted (just non-interactive) — e.g. right after navigating
+     back from lookbook/a subpage. Force it fully out of the render tree
+     on home so there's no such window at all. */
+  body:not(.is-subpage) .header__hamburger,
+  body:not(.is-subpage) .header__nav {
+    display: none;
+  }
+
+  /* "Swipe to see other brands" cue — first card only. */
+  #showcase-iabstudio .showcase__swipe-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: absolute;
+    left: 50%;
+    bottom: 3vh;
+    transform: translateX(-50%);
+    z-index: 3;
+    background: rgba(10,10,10,0.75);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .showcase__swipe-hint-arrow {
+    display: inline-block;
+    animation: swipeHintNudge 1.4s ease-in-out infinite;
   }
 }
 @media (max-width: 900px) {
