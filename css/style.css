@@ -78,6 +78,14 @@ ul { list-style: none; margin: 0; padding: 0; }
 #site-header.header--hidden {
   transform: translateY(-100%);
 }
+/* Belt-and-suspenders: hiding-on-scroll is a home-view-only effect
+   (main.js's initHeaderScrollHide already only ever adds
+   .header--hidden there). This guarantees it at the CSS layer too, so
+   lookbook/detail and every standalone subpage (mypage/support/cart/
+   checkout/signup) keep a fixed header no matter what. */
+body.is-subpage #site-header.header--hidden {
+  transform: none;
+}
 
 .header__inner {
   width: 100%;
