@@ -543,7 +543,7 @@ body.is-subpage .header__breadcrumb {
 .showcase__phone-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 24px;
   flex-shrink: 0;
 }
 .showcase__phone {
