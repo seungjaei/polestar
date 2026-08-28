@@ -424,6 +424,14 @@ function initHeaderScrollHide() {
   const showcaseRoot = $('#brand-showcase-root');
   if (!header || !showcaseRoot) return;
   window.addEventListener('scroll', () => {
+    // Lookbook/detail hide #view-home (display:none), which collapses
+    // showcaseRoot's rect to all-zeros — that reads as "top <= 4" and
+    // would hide the header on every scroll there. Only the home view
+    // should ever hide the header.
+    if (document.body.classList.contains('is-subpage')) {
+      header.classList.remove('header--hidden');
+      return;
+    }
     // small tolerance — natural scroll positions rarely land on an exact
     // integer 0px boundary, so a strict `<= 0` check can miss by 1-2px
     const entered = showcaseRoot.getBoundingClientRect().top <= 4;

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>고객센터 — POLESTAR</title>
-<link rel="stylesheet" href="css/style.css?v=20260828g">
+<link rel="stylesheet" href="css/style.css?v=20260828h">
 </head>
 <body class="is-subpage">
 
@@ -16,10 +16,13 @@
       <img src="images/logo/polestar1.jpg" alt="POLESTAR">
     </div>
     <div class="header__session">
-      <button data-action="open-login" id="btn-login">LOGIN</button>
-      <a href="signup.html" id="btn-join">JOIN</a>
-      <a href="cart.html" id="btn-cart">CART(<span id="cart-count">0</span>)</a>
-      <a href="mypage.html" id="btn-mypage">MYPAGE</a>
+      <button class="header__hamburger" id="header-hamburger" type="button" data-action="toggle-menu" aria-label="메뉴 열기" aria-expanded="false">&#9776;</button>
+      <div class="header__nav" id="header-nav">
+        <button data-action="open-login" id="btn-login">LOGIN</button>
+        <a href="signup.html" id="btn-join">JOIN</a>
+        <a href="cart.html" id="btn-cart">CART(<span id="cart-count">0</span>)</a>
+        <a href="mypage.html" id="btn-mypage">MYPAGE</a>
+      </div>
     </div>
   </div>
 </header>
@@ -93,7 +96,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabaseClient.js"></script>
-<script src="js/common.js?v=20260828g"></script>
-<script src="js/support-page.js?v=20260828g"></script>
+<script src="js/common.js?v=20260828h"></script>
+<script src="js/support-page.js?v=20260828h"></script>
 </body>
 </html>

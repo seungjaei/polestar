@@ -301,6 +301,15 @@ function openModalEl(id) {
   $('#modal-backdrop').hidden = false;
 }
 
+function toggleMobileNav(force) {
+  const nav = $('#header-nav');
+  const btn = $('#header-hamburger');
+  if (!nav || !btn) return;
+  const open = force !== undefined ? force : !nav.classList.contains('is-open');
+  nav.classList.toggle('is-open', open);
+  btn.setAttribute('aria-expanded', String(open));
+}
+
 async function mountHeader() {
   const { user } = await getSessionAndProfile();
   const loginBtn = $('#btn-login');
@@ -322,9 +331,13 @@ function wireHeaderEvents(opts = {}) {
 
   document.addEventListener('click', async e => {
     const target = e.target.closest('[data-action]');
-    if (!target) return;
-    const action = target.dataset.action;
-    if (action === 'open-login') openModalEl('modal-login');
+    const action = target?.dataset.action;
+
+    if (action === 'toggle-menu') toggleMobileNav();
+    else if (!e.target.closest('#header-session')) toggleMobileNav(false);
+
+    if (!action) return;
+    if (action === 'open-login') { openModalEl('modal-login'); toggleMobileNav(false); }
     else if (action === 'close-modal') closeAllModals();
     else if (action === 'logout') { await signOut(); location.reload(); }
   });

@@ -112,7 +112,6 @@ ul { list-style: none; margin: 0; padding: 0; }
   justify-self: end;
   display: flex;
   align-items: center;
-  gap: 24px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 300ms ease;
@@ -124,8 +123,27 @@ body.is-subpage .header__breadcrumb {
   pointer-events: auto;
 }
 
-.header__session button,
-.header__session a {
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Hidden on desktop — mobile-only trigger for the .header__nav dropdown
+   (see responsive block) so LOGIN/JOIN/CART/MYPAGE stop overlapping on
+   narrow screens. */
+.header__hamburger {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 10px;
+}
+
+.header__nav button,
+.header__nav a {
   background: transparent;
   border: none;
   font-family: var(--font-sans);
@@ -134,8 +152,8 @@ body.is-subpage .header__breadcrumb {
   color: var(--text-muted);
   transition: color 200ms ease;
 }
-.header__session button:hover,
-.header__session a:hover { color: var(--text-primary); }
+.header__nav button:hover,
+.header__nav a:hover { color: var(--text-primary); }
 
 /* ============================================================
    PROMO POPUPS
@@ -1396,6 +1414,32 @@ body.is-subpage .header__breadcrumb {
   /* Center badge (POLESTAR logo) + CTA text — 70% of desktop size. */
   .wheel__badge { width: 56px; height: 56px; }
   .wheel__cta { font-size: 9.8px; }
+
+  /* Header nav: LOGIN/JOIN/CART/MYPAGE no longer fit in a row on phone
+     widths without overlapping the logo — collapse into a hamburger
+     dropdown instead. */
+  .header__hamburger { display: block; }
+  .header__nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 4px 20px 12px 20px;
+  }
+  .header__nav.is-open { display: flex; }
+  .header__nav button,
+  .header__nav a {
+    width: 100%;
+    text-align: left;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
 }
 @media (max-width: 900px) {
   .checkout-grid { grid-template-columns: 1fr; }
