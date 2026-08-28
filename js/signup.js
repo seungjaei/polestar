@@ -50,13 +50,6 @@ function verifyAuthCode() {
   $('#btn-send-auth').disabled = true;
 }
 
-function syncEmailDomainMode() {
-  const isCustom = $('#email-domain').value === 'custom';
-  $('#email-domain-custom').hidden = !isCustom;
-  if (isCustom) $('#email-domain-custom').focus();
-  else $('#email-domain-custom').value = '';
-}
-
 function openAddressSearch() {
   if (typeof daum === 'undefined' || !daum.Postcode) { showToast('주소 검색 서비스를 불러오지 못했습니다'); return; }
   new daum.Postcode({
@@ -81,8 +74,7 @@ async function submitJoin(e) {
   const name = $('#join-name').value.trim();
   const phone = $('#join-phone').value.trim();
   const emailId = $('#email-id').value.trim();
-  const domainSelect = $('#email-domain').value;
-  const domain = domainSelect === 'custom' ? $('#email-domain-custom').value.trim() : domainSelect;
+  const domain = $('#email-domain').value.trim();
   const username = $('#join-id').value.trim();
   const pw = $('#join-pw').value;
   const pwConfirm = $('#join-pw-confirm').value;
@@ -134,9 +126,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#btn-find-address').addEventListener('click', openAddressSearch);
   $('#btn-check-id').addEventListener('click', checkUsernameAvailability);
   $('#form-join').addEventListener('submit', submitJoin);
-
-  $('#email-domain').addEventListener('change', syncEmailDomainMode);
-  syncEmailDomainMode();
 });
 
 })();

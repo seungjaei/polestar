@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원가입 — POLESTAR</title>
-<link rel="stylesheet" href="css/style.css?v=20260828f">
+<link rel="stylesheet" href="css/style.css?v=20260828g">
 </head>
 <body class="is-subpage">
 
@@ -44,14 +44,13 @@
     <div class="field-row">
       <input class="field" type="text" placeholder="이메일 아이디" id="email-id">
       <span style="align-self:center;color:#888;">@</span>
-      <select class="field select-field" id="email-domain" style="margin-bottom:0;">
-        <option value="custom">직접입력</option>
-        <option value="naver.com">naver.com</option>
-        <option value="gmail.com">gmail.com</option>
-        <option value="daum.net">daum.net</option>
-      </select>
+      <input class="field" type="text" placeholder="도메인 선택 또는 직접 입력" id="email-domain" list="email-domain-options" style="margin-bottom:0;">
+      <datalist id="email-domain-options">
+        <option value="naver.com">
+        <option value="gmail.com">
+        <option value="daum.net">
+      </datalist>
     </div>
-    <input class="field" type="text" placeholder="도메인 직접 입력 (예: mycompany.com)" id="email-domain-custom">
 
     <div class="field-row">
       <input class="field" type="text" placeholder="아이디 (8~13자)" id="join-id">
@@ -130,8 +129,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/supabaseClient.js"></script>
-<script src="js/common.js?v=20260828f"></script>
+<script src="js/common.js?v=20260828g"></script>
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="js/signup.js?v=20260828f"></script>
+<script src="js/signup.js?v=20260828g"></script>
 </body>
 </html>
