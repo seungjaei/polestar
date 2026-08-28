@@ -150,6 +150,10 @@ body.is-subpage .header__breadcrumb {
   padding: 6px 10px;
 }
 
+/* Injected by common.js when the mobile dropdown opens (see the
+   responsive block for its actual look) — desktop never needs it. */
+.header__nav-backdrop { display: none; }
+
 .header__nav button,
 .header__nav a {
   background: transparent;
@@ -1468,32 +1472,39 @@ body.is-subpage .header__breadcrumb {
     display: none;
   }
 
-  /* "Swipe to see other brands" cue — first card only. Anchored just
-     below the fixed header (not the bottom of the screen): .showcase
-     has its own z-index:1 stacking context, so anything inside it —
-     however high its own z-index — still paints under #promo-popups
-     (z-index:3, fixed to the bottom). Sitting up near the header
-     avoids that overlap entirely instead of fighting stacking order. */
-  #showcase-iabstudio .showcase__swipe-hint {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    position: absolute;
-    left: 50%;
-    top: 92px;
-    transform: translateX(-50%);
-    z-index: 3;
-    background: rgba(10,10,10,0.75);
-    border: 1px solid rgba(255,255,255,0.25);
-    padding: 8px 14px;
-    font-size: 11px;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
-    white-space: nowrap;
-    pointer-events: none;
+  /* Backdrop under an open dropdown: z-index 1 sits below the header's
+     own 2 (so the dropdown itself stays on top and tappable) but above
+     ordinary page content, so a tap meant to dismiss the menu can't
+     fall through onto whatever the dropdown happens to be covering. */
+  .header__nav-backdrop {
+    display: block;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    background: rgba(0,0,0,0.5);
   }
-  .showcase__swipe-hint-arrow {
-    display: inline-block;
+
+  /* "Swipe to see other brands" cue — first card only, arrow-only,
+     overlaid on the right edge of the phone mockup video so it reads
+     as "swipe this". .showcase__phone has its own overflow:hidden and
+     position:relative, so this is a plain child of it rather than of
+     .showcase (which would otherwise trap it under #promo-popups —
+     see the earlier bottom-anchored version this replaced). */
+  #showcase-iabstudio .showcase__swipe-hint {
+    display: block;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    font-size: 34px;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.75);
+    pointer-events: none;
     animation: swipeHintNudge 1.4s ease-in-out infinite;
   }
 }

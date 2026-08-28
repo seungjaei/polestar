@@ -301,6 +301,23 @@ function openModalEl(id) {
   $('#modal-backdrop').hidden = false;
 }
 
+function getNavBackdrop() {
+  let backdrop = $('#header-nav-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'header-nav-backdrop';
+    backdrop.className = 'header__nav-backdrop';
+    backdrop.hidden = true;
+    document.body.appendChild(backdrop);
+    // Sits below the header (z-index) but above page content, so an
+    // open dropdown can't be tapped-through into whatever happens to
+    // be underneath it (e.g. the in-page breadcrumb on lookbook,
+    // which used to sit right under the dropdown and eat the tap).
+    backdrop.addEventListener('click', () => toggleMobileNav(false));
+  }
+  return backdrop;
+}
+
 function toggleMobileNav(force) {
   const nav = $('#header-nav');
   const btn = $('#header-hamburger');
@@ -308,6 +325,7 @@ function toggleMobileNav(force) {
   const open = force !== undefined ? force : !nav.classList.contains('is-open');
   nav.classList.toggle('is-open', open);
   btn.setAttribute('aria-expanded', String(open));
+  getNavBackdrop().hidden = !open;
 }
 
 async function mountHeader() {

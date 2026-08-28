@@ -154,13 +154,9 @@ function initShowcase() {
             <video muted playsinline data-brand="${key}"></video>
             <div class="phone-home-bar"></div>
             <button class="showcase__mute" data-action="toggle-mute" data-brand="${key}">UNMUTE</button>
+            ${i === 0 ? `<span class="showcase__swipe-hint" aria-hidden="true">➔</span>` : ''}
           </div>
         </div>
-        ${i === 0 ? `
-        <div class="showcase__swipe-hint" aria-hidden="true">
-          <span>옆으로 넘겨서 다른 브랜드 보기</span>
-          <span class="showcase__swipe-hint-arrow">➔</span>
-        </div>` : ''}
       </section>
     `;
   }).join('');
